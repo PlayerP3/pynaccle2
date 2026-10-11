@@ -528,6 +528,8 @@ class AnimatedSprite():
         if self.vertice == 'center':
 
             # pos_rect = self.sprite.get_frect(center=position)#
+            
+            # to have the sprite centered at a specific position we need to effectively push it top and left
             position = (position[0] - (self.sprite.get_width()/gameScreen.windows[self.surface_to_draw_on].zoom)//2,position[1] - (self.sprite.get_height()/gameScreen.windows[self.surface_to_draw_on].zoom)//2)
 
         # elif self.vertice == 'topleft':

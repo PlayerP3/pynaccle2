@@ -26,7 +26,6 @@ def cmpT(t1, t2):
 
 #     return new_coors
 
-
 # function to build astar graph
 def build_astar_graph():
 
@@ -229,30 +228,30 @@ class Pathfinding():
             return []
         
         # if the object does not have enough clearance to reach the end point
-        if self.clearance > tilemapProcessor.astar_graph[end].clearance:
+        # if self.clearance > tilemapProcessor.astar_graph[end].clearance:
             
-            new_end = None
+        #     new_end = None
 
-            # find the closest node to the end node that has enough clearance
-            closest_nodes = sorted(tilemapProcessor.astar_graph.keys(),key= lambda x:(Vector2(x)-Vector2(end)).length()) 
+        #     # find the closest node to the end node that has enough clearance
+        #     closest_nodes = sorted(tilemapProcessor.astar_graph.keys(),key= lambda x:(Vector2(x)-Vector2(end)).length()) 
 
-            # go thruogh nodes based on their distance to object
-            for node in closest_nodes:
+        #     # go thruogh nodes based on their distance to object
+        #     for node in closest_nodes:
 
-                # check if clearance is equal to or greater than object clearance
-                if self.clearance <= tilemapProcessor.astar_graph[node].clearance:
+        #         # check if clearance is equal to or greater than object clearance
+        #         if self.clearance <= tilemapProcessor.astar_graph[node].clearance:
 
-                    new_end = node
+        #             new_end = node
 
-                    break
+        #             break
 
-            # no end point can be found
-            if not new_end:
-                return []
+        #     # no end point can be found
+        #     if not new_end:
+        #         return []
             
-            elif new_end:
-                end = new_end
-                self.pathing_end_position_tile = end
+        #     elif new_end:
+        #         end = new_end
+        #         self.pathing_end_position_tile = end
 
         # get astar graph
         # astar_graph = pynaccle.astar_graph.copy()
@@ -321,7 +320,7 @@ class Pathfinding():
                     # add the previous node (the node that was expanded to reach the current node) to the final path
                     final_path.append(tilemapProcessor.astar_graph[node_tracker].previous_node)
 
-                    # now set the current node in the tracing back to be that previous node
+                    # now set the current node in the tracking back to be that previous node
                     node_tracker = tilemapProcessor.astar_graph[node_tracker].previous_node
 
                     # print(node_tracker)
@@ -334,7 +333,7 @@ class Pathfinding():
           
                 # because the final path list starts from the end node and works its way back the path that the entity has to follow is actually starting from the end point
                 # to prevent that we reverse the final path order so it starts form the start node. return twice because two variables need this information
-                return [tilemapProcessor.astar_graph[p].center_coors for p in final_path[::-1]]
+                return [tilemapProcessor.astar_graph[p].topleftcoors for p in final_path[::-1]]
             
             # set neighboiurs for current node,
             # print(f'List comprehenstion neighbours = {astar_graph[current_node].neighbours}')
@@ -351,27 +350,18 @@ class Pathfinding():
             # loop through neighbouring ndoes
             for neighbour in neighbour_nodes:
 
-                # was having a glitch where a node object was being created twice so its previous node was being overwritten, so now we only create one if it hasnt been already created
-                # if node not in created_node_objects:
-
-                #     astar_graph[node] = Node(cost=calculate_manhattan(node,find_tile_centre(point=start_position)),heuristic=calculate_manhattan(node,find_tile_centre(point=pathing_end_position_tile)),topleftcoors=node,neighbours=find_neighbours(current_node=node,all_tiles=pynaccle.accessible_tiles))
-                #     created_node_objects.append(node)
-
                 # if the node is in the closed stack meaning it has been selected as the cheapest in an expansion and been moved to already then ignore it because we dont move back in the graph
                 if neighbour in closed_stack:
                     continue
 
-                # update 
+                # init the neighbour of the current node
                 tilemapProcessor.astar_graph[neighbour].init({'topleftcoors':neighbour,
                                                'cost':calculate_manhattan(neighbour,start),
                                                'heuristic':calculate_manhattan(neighbour,end)}) 
 
-                # if the node is not in the open stack meaning they havent been put up as an option to move to yet or if the cost to this node is smaller than the cost for the current node then we can consider it as a possible option in the open stack
-                if (neighbour not in open_stack or (tilemapProcessor.astar_graph[neighbour].total < tilemapProcessor.astar_graph[current_node].total)) and tilemapProcessor.astar_graph[neighbour].clearance > self.clearance:
+                # if the node is not in the open stack meaning they havent been put up as an option to move to yet or if the cost (distance) to this node is smaller than the cost (distance) for the current node then we can consider it as a possible option in the open stack
+                if (neighbour not in open_stack or (tilemapProcessor.astar_graph[neighbour].total < tilemapProcessor.astar_graph[current_node].total)):
 
-                    # print(neighbour)
-                    # print(pynaccle.astar_graph[neighbour].clearance)
-                    # print(self.clearance)
                     # make the parent of the node be the current node right now
                     # astar_graph[current_node].previous_node = node
                     tilemapProcessor.astar_graph[neighbour].previous_node = current_node
@@ -553,6 +543,8 @@ class Pathfinding():
 
                     # update path cache, new pathing is set in function
                     self.update_path_cache()
+            
+                print(self.pathing)
 
 
             # set update pathing to false
