@@ -12,6 +12,13 @@ class Chasing(State):
         State.__init__(self)
 
     def enter(self):
+        
+        self.parent_node.pathing_gameObj_hurtbox_pos = (-64,-425)
+        
+        # update pathing and cache
+        self.parent_node.update_pathing_and_cache()
+        
+        
 
         pass
 
@@ -20,8 +27,12 @@ class Chasing(State):
 
         # submit event processing
         self.submit_event_processing()
-
-        self.parent_node.pathing_gameObj_hurtbox_pos = objectManager.player.hurtbox.center
+        
+        # print(self.parent_node.pathing)
+        print(self.parent_node.movement_vectors)
+        
+        # self.parent_node.pathing_gameObj_hurtbox_pos = objectManager.player.hurtbox.center
+        self.parent_node.pathing_gameObj_hurtbox_pos = (-64,-425)
 
         # update pathing and cache
         self.parent_node.update_pathing_and_cache()

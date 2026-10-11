@@ -1218,10 +1218,34 @@ class Moveable_Object(AnimatedSprite):
 
         # handle overshooting
         if target_point:
+            
+            print('tgo=',target_point)
+            print('pbm',position_before_movement)
+            print('hboxCent',self.hurtbox.center)
 
-            if ((Vector2(target_point) - Vector2(position_before_movement)).length() < (Vector2(self.hurtbox.center) - Vector2(position_before_movement)).length()):
+            if ((Vector2(target_point) - Vector2(position_before_movement)).length() <= (Vector2(self.hurtbox.center) - Vector2(position_before_movement)).length()):
 
-                self.hurtbox.center = target_point
+                # move to next point in pathing
+                if self.pathing:
+                            
+                    # if the pathing is longer than 1 then delete path and move on
+                    if len(self.pathing) > 1:
+                        del self.pathing[0]
+                        
+                    # set target to be the next thing in the pathing
+                    self.target_position = self.pathing[0]
+                    
+                    # if target position is the last tile then just stop all movement
+                    if self.target_position == self.pathing_gameObj_tile_pos:
+                        self.movement_vectors = {}
+                    
+                    else:
+
+                        # update movement towards next point in path
+                        self.update_movement_vectors2(start_position=self.hurtbox.center,target_position=self.pathing[0])
+                                                
+                # else:
+                #     self.hurtbox.center = target_point
 
         # # reset vectors
         self.direction_vectorX = 0
