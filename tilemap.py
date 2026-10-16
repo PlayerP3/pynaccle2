@@ -102,7 +102,7 @@ class Tilemap():
                 # sprite.vertice = 'topleft'
 
                 # set new vars
-                newObj.vertice = 'center'
+                newObj.vertice = 'topleft'
                 newObj.zlayer_drawing = int(layer)
                 newObj.spawnLocation = ast.literal_eval(pos)
                 newObj.connectedChunk = chunkNo
@@ -165,7 +165,7 @@ class Tilemap():
 
             for gameobj in self.chunkObj[chunk]:
                 gameobj.init()
-                gameobj.spawn(pos=gameobj.spawnLocation,vertice='center')
+                gameobj.spawn(pos=gameobj.spawnLocation,vertice='topleft')
 
                 # if chunk then dont add accessibility
                 if gameobj.__class__.__name__ == 'Chunk':

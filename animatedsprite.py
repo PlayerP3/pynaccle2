@@ -431,7 +431,7 @@ class AnimatedSprite():
         gameScreen.shaderPrograms[self.shader]['screenSize'] = (gameScreen.windows[self.surface_to_draw_on].win_width,gameScreen.windows[self.surface_to_draw_on].win_height)
         gameScreen.shaderPrograms[self.shader]['spriteSize'] = self.sprite.get_size()
         gameScreen.shaderPrograms[self.shader]['spriteOffset'] = (self.sprite_offsetx,self.sprite_offsety)
-        gameScreen.shaderPrograms[self.shader]['position'] = (self.hurtbox.center)
+        gameScreen.shaderPrograms[self.shader]['position'] = (self.hurtbox.topleft)
 
         gameScreen.shaderPrograms[self.shader]['rotation'] = math.radians(float(-self.direction))
         gameScreen.shaderPrograms[self.shader]['bgOffset'] = (gameScreen.windows[self.surface_to_draw_on].bg_offset_x,gameScreen.windows[self.surface_to_draw_on].bg_offset_y)
