@@ -46,7 +46,7 @@ class Tilemap():
 
             # add window for chunk
             # set chunk in bg surf
-            gameScreen.add_window(chunk,width=12000,height=12000,pos=(gameScreen.fullscreen_width//2,gameScreen.fullscreen_height//2),zoom=1)
+            gameScreen.add_window(chunk,width=9600,height=9600,pos=(gameScreen.fullscreen_width//2,gameScreen.fullscreen_height//2),zoom=1)
             gameScreen.windows[chunk].bg_offset_x = (gameScreen.windows[chunk].win_width)//2
             gameScreen.windows[chunk].bg_offset_y = (gameScreen.windows[chunk].win_height)//2
 
@@ -90,6 +90,8 @@ class Tilemap():
                 # if "spawnOffsetX" not in buildJSON:
                 #     buildJSON["spawnOffsetX"] = 16
                 #     buildJSON["spawnOffsetY"] = 16
+                
+                
 
                 # init obj absed on its class and set attrs
                 newObj = classMappings[classConversion]()
@@ -104,6 +106,11 @@ class Tilemap():
                 newObj.zlayer_drawing = int(layer)
                 newObj.spawnLocation = ast.literal_eval(pos)
                 newObj.connectedChunk = chunkNo
+                
+                if className == 'Wall':
+                                    
+                    print(newObj.spawnLocation)
+                    
 
                 # start building copy
                 if layer not in self.tilemap[chunkNo]:
@@ -118,35 +125,37 @@ class Tilemap():
                 
                 # determine what happens to different objs
                 # newObj.hurtbox.topleft = ast.literal_eval(pos)
-                # all bg tiles are drawn at the topleft vertice
+                # # all bg tiles are drawn at the topleft vertice
                 if className == 'BgTile':
 
-                    newObj.surface_to_draw_on = chunk
-                    newObj.init_sprite()
+                #     newObj.surface_to_draw_on = chunk
+                #     newObj.init_sprite()
                     
-                    # if posss == (0,0):
-                    #     continue
-                    newObj.draw_surface(position=ast.literal_eval(pos),schedule_deletion=False)
+                #     # if posss == (0,0):
+                #     #     continue
+                #     newObj.draw_surface(position=ast.literal_eval(pos),schedule_deletion=False)
 
-                    # add to accessible tiles
+                #     # add to accessible tiles
                     self.accessible_tiles.append(ast.literal_eval(pos))
                 
                 
-                # if it is not jsut an animated sprite bg tile
-                else:
+                # # if it is not jsut an animated sprite bg tile
+                # else:
 
-                    # store obj
-                    self.chunkObj[chunkNo].append(newObj)
-                        
+                # store obj
+                self.chunkObj[chunkNo].append(newObj)
+                    
 
             # render 
-            gameScreen.windows[chunk].render_objects_cpu()
-            gameScreen.windows[chunk].drawing_queue = {}
+            # gameScreen.windows[chunk].render_objects_cpu()
+            # gameScreen.windows[chunk].drawing_queue = {}
 
             # add sprite for chunk obj and add it to objects to blit
-            chunkObj = classMappings['Chunk']()
-            chunkObj.create_chunk_sprite(gameScreen.windows[chunk].win)
-            self.chunkObj[chunkNo].append(chunkObj)
+            # chunkObj = classMappings['Chunk']()
+            # chunkObj.create_chunk_sprite(gameScreen.windows[chunk].win)
+            # self.chunkObj[chunkNo].append(chunkObj)
+
+  
 
     # init and add a chunk
     def add_chunk(self,chunk:int):
