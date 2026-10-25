@@ -448,7 +448,7 @@ class AnimatedSprite():
     # model = glm::translate(model, glm::vec3(-0.5f * size.x, -0.5f * size.y, 0.0f));
         # scale
         # translate, y is negative because of pygame
-        self.modelMatrix = glm.translate(self.modelMatrix,glm.vec3(self.hurtbox.centerx,-self.hurtbox.centery,0))
+        self.modelMatrix = glm.translate(self.modelMatrix,glm.vec3(self.hurtbox.centerx + self.sprite_offsetx,-self.hurtbox.centery - self.sprite_offsety,0))
         
         # top left origin adjustments
         # self.modelMatrix = glm.translate(self.modelMatrix,glm.vec3(0.5*self.sizeVector.x,0.5*self.sizeVector.y,0))

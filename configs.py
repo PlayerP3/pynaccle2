@@ -10,7 +10,7 @@ class Configs():
     def add_config(self,filePath:str):
         
         # the dict key will be the name of the config file without config_
-        suffix = filePath.split('/')[-1].lstrip('config_').rstrip('.json')
+        suffix = filePath.split('/')[-1].removeprefix('config_').removesuffix('.json')
         
         with open(filePath,'r') as config:
             self.loadedConfigs[suffix] = json.load(config)  

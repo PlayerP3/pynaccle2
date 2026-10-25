@@ -4,6 +4,7 @@ from .raycast import Raycast
 from .animatedsprite import AnimatedSprite
 from .globs import delta,FPS
 from .objectsystem import objectManager
+from .configs import configData
 from .utils import *
 from .hitbox import *
 import random
@@ -424,20 +425,34 @@ class Moveable_Object(AnimatedSprite):
         
 
         if vertice == "center":
-            self.hurtbox.center = (pos[0]+self.spawnOffsetX,pos[1]+self.spawnOffsetY)
+            self.hurtbox.center = (pos[0]+self.spawnOffsetX,pos[1]-self.spawnOffsetY)
 
         elif vertice == "topleft":
             
-            bufferX,bufferY = 0,0
+            posAdjustemntX = 0
+            posAdjustemntY = 0
             
-            # we need to also add a buffer if the sprite size is not perfect tile size of 32, because we want the 
-            if self.hurtbox.size[0] != 32:
-                bufferX = self.hurtbox.size[0] - 32
+            # if hurtbox size is bigger (or smaller) than the tile size of the game then we want to adjust the position so the sprite and everything still sits in the center
             
-            elif self.hurtbox.size[1] != 32:
-                bufferY = self.hurtbox.size[1] - 32
+            # x adjust
+            if self.hurtbox.size[0] > configData.loadedConfigs['params']['tileSize']:
+                
+                posAdjustemntX = self.hurtbox.size[0] - configData.loadedConfigs['params']['tileSize']
+                
+            elif self.hurtbox.size[0] < configData.loadedConfigs['params']['tileSize']:
+                            
+                posAdjustemntX = (self.hurtbox.size[0] - configData.loadedConfigs['params']['tileSize']) * -1
+                
+            # y adjust
+            if self.hurtbox.size[1] > configData.loadedConfigs['params']['tileSize']:
+                
+                posAdjustemntY = self.hurtbox.size[1] - configData.loadedConfigs['params']['tileSize']
+                
+            if self.hurtbox.size[1] < configData.loadedConfigs['params']['tileSize']:
+                            
+                posAdjustemntY = (self.hurtbox.size[1] - configData.loadedConfigs['params']['tileSize']) * -1
             
-            self.hurtbox.topleft = (pos[0]+self.spawnOffsetX-bufferX,pos[1]+self.spawnOffsetY+bufferY)
+            self.hurtbox.topleft = (pos[0]+self.spawnOffsetX-posAdjustemntX,pos[1]+self.spawnOffsetY-posAdjustemntY)
 
     # move function
     def move_to(self,pos:tuple,vertex:str="center"):
