@@ -437,20 +437,20 @@ class Moveable_Object(AnimatedSprite):
             # x adjust
             if self.hurtbox.size[0] > configData.loadedConfigs['params']['tileSize']:
                 
-                posAdjustemntX = self.hurtbox.size[0] - configData.loadedConfigs['params']['tileSize']
+                posAdjustemntX = self.hurtbox.size[0]/2 - configData.loadedConfigs['params']['tileSize']/2
                 
             elif self.hurtbox.size[0] < configData.loadedConfigs['params']['tileSize']:
                             
-                posAdjustemntX = (self.hurtbox.size[0] - configData.loadedConfigs['params']['tileSize']) * -1
+                posAdjustemntX = (self.hurtbox.size[0]/2 - configData.loadedConfigs['params']['tileSize']/2) * -1
                 
             # y adjust
             if self.hurtbox.size[1] > configData.loadedConfigs['params']['tileSize']:
                 
-                posAdjustemntY = self.hurtbox.size[1] - configData.loadedConfigs['params']['tileSize']
+                posAdjustemntY = self.hurtbox.size[1]/2 - configData.loadedConfigs['params']['tileSize']/2
                 
             if self.hurtbox.size[1] < configData.loadedConfigs['params']['tileSize']:
                             
-                posAdjustemntY = (self.hurtbox.size[1] - configData.loadedConfigs['params']['tileSize']) * -1
+                posAdjustemntY = (self.hurtbox.size[1]/2 - configData.loadedConfigs['params']['tileSize']/2) * -1
             
             self.hurtbox.topleft = (pos[0]+self.spawnOffsetX-posAdjustemntX,pos[1]+self.spawnOffsetY-posAdjustemntY)
 
