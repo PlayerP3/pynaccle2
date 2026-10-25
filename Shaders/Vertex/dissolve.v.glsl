@@ -8,6 +8,7 @@ uniform vec2 position;
 uniform float rotation;
 uniform float zoom;
 uniform float screenZoom;
+uniform mat4 modelMatrix;
 //uniform mat4 projectionMatrix;
 // uniform mat4 transformationMatrix;
 
@@ -34,5 +35,5 @@ void main() {
     vec2 combinedOffset = vec2(position.x,-position.y) + vec2(bgOffset.x,-bgOffset.y) + vec2(spriteOffset.x,-spriteOffset.y);
     vec2 scaledOffset = (combinedOffset/(screenSize/2))*screenZoom;
 
-    gl_Position = vec4(screenScaledVertexPosition + scaledOffset, 0.0, 1.0);
+    gl_Position = modelMatrix * vec4(screenScaledVertexPosition + scaledOffset, 0.0, 1.0);
 }

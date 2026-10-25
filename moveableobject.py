@@ -421,12 +421,23 @@ class Moveable_Object(AnimatedSprite):
     def spawn(self,pos:tuple,vertice:str="center"):
 
         self.is_active = True
+        
 
         if vertice == "center":
             self.hurtbox.center = (pos[0]+self.spawnOffsetX,pos[1]+self.spawnOffsetY)
 
         elif vertice == "topleft":
-            self.hurtbox.topleft = (pos[0]+self.spawnOffsetX,pos[1]+self.spawnOffsetY)
+            
+            bufferX,bufferY = 0,0
+            
+            # we need to also add a buffer if the sprite size is not perfect tile size of 32, because we want the 
+            if self.hurtbox.size[0] != 32:
+                bufferX = self.hurtbox.size[0] - 32
+            
+            elif self.hurtbox.size[1] != 32:
+                bufferY = self.hurtbox.size[1] - 32
+            
+            self.hurtbox.topleft = (pos[0]+self.spawnOffsetX-bufferX,pos[1]+self.spawnOffsetY+bufferY)
 
     # move function
     def move_to(self,pos:tuple,vertex:str="center"):

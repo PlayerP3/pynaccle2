@@ -8,7 +8,7 @@ class Chunk(AnimatedSprite):
     
     def __init__(self):
        
-       super().__init__(self)
+       super().__init__()
        
        self.inaccessible = False
        self.zlayer_drawing = 0
@@ -72,16 +72,17 @@ class Chunk(AnimatedSprite):
 
         gameScreen.shaderPrograms[self.shader]['memSlot'] = 0
         # self.shaderPrograms[self.shader]['alpha'] = self.alpha
-        gameScreen.shaderPrograms[self.shader]['screenSize'] = (gameScreen.windows[self.surface_to_draw_on].win_width,gameScreen.windows[self.surface_to_draw_on].win_height)
-        # gameScreen.shaderPrograms[self.shader]['screenSize'] = (gameScreen.fullscreen_width,gameScreen.fullscreen_height)
+        # gameScreen.shaderPrograms[self.shader]['screenSize'] = (gameScreen.windows[self.surface_to_draw_on].win_width,gameScreen.windows[self.surface_to_draw_on].win_height)
+        # # gameScreen.shaderPrograms[self.shader]['screenSize'] = (gameScreen.fullscreen_width,gameScreen.fullscreen_height)
 
-        gameScreen.shaderPrograms[self.shader]['spriteSize'] = self.sprite.get_size()
-        gameScreen.shaderPrograms[self.shader]['spriteOffset'] = (self.sprite_offsetx,self.sprite_offsety)
-        gameScreen.shaderPrograms[self.shader]['position'] = (self.hurtbox.center)
-        gameScreen.shaderPrograms[self.shader]['rotation'] = math.radians(float(self.direction))
-        gameScreen.shaderPrograms[self.shader]['bgOffset'] = (gameScreen.windows[self.surface_to_draw_on].bg_offset_x,gameScreen.windows[self.surface_to_draw_on].bg_offset_y)
-        gameScreen.shaderPrograms[self.shader]['zoom'] = self.zoom
-        gameScreen.shaderPrograms[self.shader]['screenZoom'] = gameScreen.windows[self.surface_to_draw_on].zoom
+        # gameScreen.shaderPrograms[self.shader]['spriteSize'] = self.sprite.get_size()
+        # gameScreen.shaderPrograms[self.shader]['spriteOffset'] = (self.sprite_offsetx,self.sprite_offsety)
+        # gameScreen.shaderPrograms[self.shader]['position'] = (self.hurtbox.center)
+        # gameScreen.shaderPrograms[self.shader]['rotation'] = math.radians(float(self.direction))
+        # gameScreen.shaderPrograms[self.shader]['bgOffset'] = (gameScreen.windows[self.surface_to_draw_on].bg_offset_x,gameScreen.windows[self.surface_to_draw_on].bg_offset_y)
+        # gameScreen.shaderPrograms[self.shader]['zoom'] = self.zoom
+        # gameScreen.shaderPrograms[self.shader]['screenZoom'] = gameScreen.windows[self.surface_to_draw_on].zoom
+        gameScreen.shaderPrograms[self.shader]['modelMatrix'].write(self.modelMatrix)
 
     #     self.transformationMatrix = glm.mat4(1.0)
     #     self.transformationMatrix = glm.rotate(self.transformationMatrix,glm.radians(self.direction),glm.vec3(1.0,0.0,0.0))

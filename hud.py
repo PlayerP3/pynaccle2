@@ -7,7 +7,8 @@ class HUD_element(AnimatedSprite):
 
     def __init__(self,win_pos:tuple=(0,0),winPosWidthRatio:float=0,winPosHeightRatio:float=0,winPosWidthOffsetRatio:float=0,winPosHeightOffsetRatio:float=0):
 
-        AnimatedSprite.__init__(self)
+        # AnimatedSprite.__init__(self)
+        super().__init__()
 
         # you can give a set of sprite objects to the hud element, and give a zlayer as well, and then it handles how it is drawn by the hud
         # the position is always 
@@ -68,18 +69,30 @@ class HUD_element(AnimatedSprite):
         self.submit_to_render()
         
     def set_default_uniforms(self):
+        
+        self.update_matrices()
+        # print(glm.value_ptr(self.modelMatrix))
+        # print(self.modelMatrix)
+        # print(numpy.array(self.modelMatrix))
+        
+        # print(gameScreen.shaderPrograms[self.shader].get('memSlot','Rawr'))
+        # print(gameScreen.shaderPrograms[self.shader].get('modelMatrix','NOPEEEE'))
 
         gameScreen.shaderPrograms[self.shader]['memSlot'] = 0
-        gameScreen.shaderPrograms[self.shader]['alpha'] = self.alpha
-        gameScreen.shaderPrograms[self.shader]['screenSize'] = (gameScreen.windows[self.surface_to_draw_on].win_width,gameScreen.windows[self.surface_to_draw_on].win_height)
-        gameScreen.shaderPrograms[self.shader]['spriteSize'] = self.sprite.get_size()
-        gameScreen.shaderPrograms[self.shader]['spriteOffset'] = (self.sprite_offsetx,self.sprite_offsety)
-        gameScreen.shaderPrograms[self.shader]['position'] = (self.hurtbox.center)
-        gameScreen.shaderPrograms[self.shader]['rotation'] = math.radians(float(self.direction))
-        gameScreen.shaderPrograms[self.shader]['bgOffset'] = (0,0)
-        gameScreen.shaderPrograms[self.shader]['zoom'] = self.zoom
-        gameScreen.shaderPrograms[self.shader]['screenZoom'] = gameScreen.windows[self.surface_to_draw_on].zoom
+        # gameScreen.shaderPrograms[self.shader]['alpha'] = self.alpha
+        # gameScreen.shaderPrograms[self.shader]['screenSize'] = (gameScreen.windows[self.surface_to_draw_on].win_width,gameScreen.windows[self.surface_to_draw_on].win_height)
+        # gameScreen.shaderPrograms[self.shader]['spriteSize'] = self.sprite.get_size()
+        # gameScreen.shaderPrograms[self.shader]['spriteOffset'] = (self.sprite_offsetx,self.sprite_offsety)
+        # gameScreen.shaderPrograms[self.shader]['position'] = (self.hurtbox.center)
+        # gameScreen.shaderPrograms[self.shader]['rotation'] = math.radians(float(self.direction))
+        # gameScreen.shaderPrograms[self.shader]['bgOffset'] = (0,0)
+        # gameScreen.shaderPrograms[self.shader]['zoom'] = self.zoom
+        # gameScreen.shaderPrograms[self.shader]['screenZoom'] = gameScreen.windows[self.surface_to_draw_on].zoom
 
+
+        gameScreen.shaderPrograms[self.shader]['modelMatrix'].write(self.modelMatrix)
+        gameScreen.shaderPrograms[self.shader]['viewMatrix'].write(self.viewMatrix)
+        gameScreen.shaderPrograms[self.shader]['orthographicMatrix'].write(self.orthographicMatrix)
 
     def set_shader_dependent_uniforms(self):
         
