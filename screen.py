@@ -49,6 +49,15 @@ class ContextManager():
                                     0.5,-0.5,1.0,1.0, # br
                                 ]))
         
+        # switch uvs so its flipped aorund ( dont know wyhy yet but this is what im following (framebuffers opengl))
+        self.winquadBuffer = self.ctx.buffer(data=array('f',[
+                                            # pos xy uv-cords xy
+                                            -1.0,1.0,0.0,1.0, #tl
+                                            1.0,1.0,1.0,1.0, # tr
+                                            -1.0,-1.0,0.0,0.0, # bl
+                                            1.0,-1.0,1.0,0.0, # br
+                                        ]))
+        
     # always expect there to be a directory called Shaders with subdirectory Fragment and Vertex
     def load_shaders(self):
 
@@ -84,8 +93,13 @@ class ContextManager():
 
         for shader in self.vertexShaders:
             
-            self.shaderPrograms[shader] = self.ctx.program(vertex_shader=self.vertexShaders[shader],fragment_shader=self.fragmentShaders[shader])           
-            self.renderObjects[shader] = self.ctx.vertex_array(self.shaderPrograms[shader],[(self.quadBuffer,'2f 2f','vertexPosition','textureCoordinate')])
+            self.shaderPrograms[shader] = self.ctx.program(vertex_shader=self.vertexShaders[shader],fragment_shader=self.fragmentShaders[shader])
+            
+            if shader == 'default_windows':
+                self.renderObjects[shader] = self.ctx.vertex_array(self.shaderPrograms[shader],[(self.winquadBuffer,'2f 2f','vertexPosition','textureCoordinate')])
+            
+            else:  
+                self.renderObjects[shader] = self.ctx.vertex_array(self.shaderPrograms[shader],[(self.quadBuffer,'2f 2f','vertexPosition','textureCoordinate')])
  
 
 
@@ -94,8 +108,8 @@ class Screen(ContextManager):
     def __init__(self):
 
         # the final display which the window is drawn onto
-        self.screen = pygame.display.set_mode((0,0),pygame.OPENGL|pygame.DOUBLEBUF|pygame.FULLSCREEN,vsync=1)
-        # self.screen = pygame.display.set_mode((1200,1200),pygame.OPENGL|pygame.DOUBLEBUF,vsync=1)
+        # self.screen = pygame.display.set_mode((0,0),pygame.OPENGL|pygame.DOUBLEBUF|pygame.FULLSCREEN,vsync=1)
+        self.screen = pygame.display.set_mode((1200,1200),pygame.OPENGL|pygame.DOUBLEBUF,vsync=1)
 
         ContextManager.__init__(self)
 
@@ -103,8 +117,11 @@ class Screen(ContextManager):
         self.fullscreen_width = pygame.display.Info().current_w
         self.fullscreen_height = pygame.display.Info().current_h
         
+        # print(self.fullscreen_width,self.fullscreen_height)
+        # sys.exit()
+        
         # zoom value
-        self.zoom = 0.5
+        self.zoom = 1
         
         # set viewport
         self.ctx.viewport = (0, 0, self.fullscreen_width, self.fullscreen_height)
@@ -150,44 +167,32 @@ class Screen(ContextManager):
         # self.ctx.screen.clear()
         self.ctx.enable(moderngl.BLEND)
 
-        # self.ctx.screen.use()
-        # render objects onto window
-        # for nom,win in self.windows.items():
-            
-        #     if win.name != 'win':
-        #         continue
-        #     win.frameBuffer.clear()            
-        #     win.frameBuffer.use()
-        #     self.ctx.viewport = (0, 0, win.win_width, win.win_height)
-        #     win.render_objects_gpu()
-
-        # render windows
-        self.ctx.disable(moderngl.BLEND)
         self.ctx.screen.clear()
-        self.ctx.screen.use()
-        self.ctx.viewport = (0, 0, self.fullscreen_width, self.fullscreen_height)
         
-        # print(self.ctx.viewport)
-        # sys.exit()
+        # self.ctx.screen.use()
+        # self.ctx.viewport = (0, 0, self.fullscreen_width, self.fullscreen_height)
+        
         for nom,win in self.windows.items():
                     
             if win.name != 'win':
                 continue
-            # win.frameBuffer.clear()            
-            # win.frameBuffer.use()
-            # self.ctx.viewport = (0, 0, win.win_width, win.win_height)
+            win.frameBuffer.clear()            
+            win.frameBuffer.use()
+            self.ctx.viewport = (0, 0, win.win_width, win.win_height)
             win.render_objects_gpu()
 
-
-
-        # for nom,win in self.windows.items():
-        #     if win.name != 'win':
-        #         continue
-        #     win.render()
-
+        
+        # render windows
+        self.ctx.disable(moderngl.BLEND)
+        
+        self.ctx.screen.use()
+        self.ctx.viewport = (0, 0, self.fullscreen_width, self.fullscreen_height)
         
 
-
+        for nom,win in self.windows.items():
+            if win.name != 'win':
+                continue
+            win.render()
 
 class Window():
     
@@ -653,50 +658,49 @@ class Window():
         
     def update_matrices(self):
             
+        ### SIZE VECTOR ###
+        # define size vector
+        self.sizeVector = glm.vec2(*(self.win.width,self.win.height))
+        
+        
         ### MODEL MATRIX ###
         
         # reset model matrix
-        self.modelMatrix = glm.mat4(1.0)
+        self.modelMatrix = glm.mat4()
         
         # order is scale -> rotate -> translate
-        
-        # scale
+        #     model = glm::translate(model, glm::vec3(0.5f * size.x, 0.5f * size.y, 0.0f)); 
+        # model = glm::rotate(model, glm::radians(rotate), glm::vec3(0.0f, 0.0f, 1.0f)); 
+        # model = glm::translate(model, glm::vec3(-0.5f * size.x, -0.5f * size.y, 0.0f));
+            # scale
         # translate, y is negative because of pygame
-        self.modelMatrix = glm.translate(self.modelMatrix,glm.vec3(self.hurtbox.centerx,-self.hurtbox.centery,0))
+        # self.modelMatrix = glm.translate(self.modelMatrix,glm.vec3(0,0,0))
         
-        # rotate, vec3 is axis we want to rotate on
-        self.modelMatrix = glm.rotate(self.modelMatrix,glm.radians(float(-self.direction)),glm.vec3(0,0,1))
+        # # rotate, vec3 is axis we want to rotate on
+        # self.modelMatrix = glm.rotate(self.modelMatrix,0,glm.vec3(0,0,1))
         
-        # scale x and y by zoom
-        self.modelMatrix = glm.scale(self.modelMatrix,glm.vec3(self.zoom,self.zoom,0))
+        # # scale x and y by zoom
+        # self.modelMatrix = glm.scale(self.modelMatrix,glm.vec3(self.zoom*self.sizeVector.x,self.zoom*self.sizeVector.y,0))
         
         ### VIEW MATRIX ###
         
         # reset matrix
-        self.viewMatrix = glm.mat4(1.0)
+        self.viewMatrix = glm.mat4()
         
-        # add offset
-        self.viewMatrix = glm.translate(self.viewMatrix,glm.vec3(gameScreen.windows[self.surface_to_draw_on].bg_offset_x,-gameScreen.windows[self.surface_to_draw_on].bg_offset_y,0))
+        # add offset, dont need it now, but when we add camera offset back it will be adjusting this view matrix
+        # self.viewMatrix = glm.translate(self.viewMatrix,glm.vec3(gameScreen.fullscreen_width/2,gameScreen.fullscreen_height/2,0))
         
         ### ORTHOGRAPHIC MATRIX ###
-        self.orthographicMatrix = glm.ortho(0,self.win_width,0,self.win_height,0,0.1)
-            
-            
-    
+        self.orthographicMatrix = glm.mat4()
+        # self.orthographicMatrix = glm.ortho(0,gameScreen.windows[self.surface_to_draw_on].win_width,0,gameScreen.windows[self.surface_to_draw_on].win_height,0,0.1)
+        # self.orthographicMatrix = glm.ortho((-gameScreen.fullscreen_width/2)/gameScreen.zoom,(gameScreen.fullscreen_width/2)/gameScreen.zoom,(-gameScreen.fullscreen_height/2)/gameScreen.zoom,(gameScreen.fullscreen_height/2)/gameScreen.zoom,0,100)
+
     def set_default_uniforms(self):
             
             self.update_matrices()
     
             gameScreen.shaderPrograms[self.shader]['memSlot'] = 0
             # gameScreen.shaderPrograms[self.shader]['alpha'] = self.alpha
-            # gameScreen.shaderPrograms[self.shader]['screenSize'] = (gameScreen.windows[self.surface_to_draw_on].win_width,gameScreen.windows[self.surface_to_draw_on].win_height)
-            # gameScreen.shaderPrograms[self.shader]['spriteSize'] = self.sprite.get_size()
-            # gameScreen.shaderPrograms[self.shader]['spriteOffset'] = (self.sprite_offsetx,self.sprite_offsety)
-            # gameScreen.shaderPrograms[self.shader]['position'] = (self.hurtbox.topleft)
-    
-            # gameScreen.shaderPrograms[self.shader]['rotation'] = math.radians(float(-self.direction))
-            # gameScreen.shaderPrograms[self.shader]['bgOffset'] = (gameScreen.windows[self.surface_to_draw_on].bg_offset_x,gameScreen.windows[self.surface_to_draw_on].bg_offset_y)
-            
             gameScreen.shaderPrograms[self.shader]['modelMatrix'].write(self.modelMatrix)
             gameScreen.shaderPrograms[self.shader]['viewMatrix'].write(self.viewMatrix)
             gameScreen.shaderPrograms[self.shader]['orthographicMatrix'].write(self.orthographicMatrix)
@@ -709,12 +713,6 @@ class Window():
             for n in nameVal:
                 gameScreen.shaderPrograms[self.shader][n] = nameVal[n]
 
-    def set_default_uniforms(self):
-        
-        gameScreen.shaderPrograms[self.shader]['memSlot'] = 0
-        
-    
-       
 
     def render(self):
 
@@ -726,7 +724,7 @@ class Window():
 
         # set specifc uniforms
         self.set_uniforms()
-
+        
         # render
         gameScreen.renderObjects[self.shader].render(mode=moderngl.TRIANGLE_STRIP)
 

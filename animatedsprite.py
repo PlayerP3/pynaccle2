@@ -447,7 +447,7 @@ class AnimatedSprite():
     # model = glm::rotate(model, glm::radians(rotate), glm::vec3(0.0f, 0.0f, 1.0f)); 
     # model = glm::translate(model, glm::vec3(-0.5f * size.x, -0.5f * size.y, 0.0f));
         # scale
-        # translate, y is negative because of pygame
+        # translate, y is negative because of pygame, we stop nmegating hurtbox here because the projection amtrix handles the convbersion from pygame to regular rendering
         self.modelMatrix = glm.translate(self.modelMatrix,glm.vec3(self.hurtbox.centerx + self.sprite_offsetx,-self.hurtbox.centery - self.sprite_offsety,0))
         
         # top left origin adjustments
@@ -472,44 +472,10 @@ class AnimatedSprite():
         ### ORTHOGRAPHIC MATRIX ###
         # self.orthographicMatrix = glm.mat4(1.0)
         # self.orthographicMatrix = glm.ortho(0,gameScreen.windows[self.surface_to_draw_on].win_width,0,gameScreen.windows[self.surface_to_draw_on].win_height,0,0.1)
-        self.orthographicMatrix = glm.ortho(-gameScreen.fullscreen_width*gameScreen.zoom/2,gameScreen.fullscreen_width*gameScreen.zoom/2,-gameScreen.fullscreen_height*gameScreen.zoom/2,gameScreen.fullscreen_height*gameScreen.zoom/2,0,100)
-        # print(self.orthographicMatrix)
-        # sys.exit()
-        # self.orthographicMatrix = glm.ortho(0-gameScreen.fullscreen_width/2,0+gameScreen.fullscreen_width/2,0-gameScreen.fullscreen_height/2,0+gameScreen.fullscreen_height/2,0.1,100)
-        # self.orthographicMatrix = glm.perspective(0,gameScreen.fullscreen_width/gameScreen.fullscreen_height,0.1,100)
-        
-        
-        
-        
-        
-        # create the scale matrix, we dont need anything on Z because we are working with 2d
-        # scaleMatrix = glm.mat4(self.zoom,self.zoom,1,1)
-        
-        # # first we create a matrix with 1 along the diagonal, and then we want the three values on the last row to be our translation/ the object position relative to 0,0 in the world
-        # translationMatrix = glm.mat4(1.0) + glm.mat4(*[0,0,0,0,
-        #                                                0,0,0,0,
-        #                                                0,0,0,0,
-        #                                                self.hurtbox.centerx,self.hurtbox.centery,0,0])
-        
-        # # rotation matrix, in this game we will be rotating around the the z axis
-        # rotationMatrix = glm.mat4(0) + glm.mat4(*[math.cos(math.radians(float(-self.direction))),math.sin(math.radians(float(-self.direction))),0,0,
-        #                                           -math.sin(math.radians(float(-self.direction))),math.cos(math.radians(float(-self.direction))),0,0,
-        #                                           0,0,1,0,
-        #                                           0,0,0,1])
+        self.orthographicMatrix = glm.ortho((-gameScreen.windows[self.surface_to_draw_on].win_width/2)/gameScreen.zoom,(gameScreen.windows[self.surface_to_draw_on].win_width/2)/gameScreen.zoom,(-gameScreen.windows[self.surface_to_draw_on].win_height/2)/gameScreen.zoom,(gameScreen.windows[self.surface_to_draw_on].win_height/2)/gameScreen.zoom,0,100)
+        # self.orthographicMatrix = glm.ortho((-gameScreen.fullscreen_width/2)/gameScreen.zoom,(gameScreen.fullscreen_width/2)/gameScreen.zoom,(gameScreen.fullscreen_height/2)/gameScreen.zoom,(-gameScreen.fullscreen_height/2)/gameScreen.zoom,0,100)
         
 
-        
-        # print(rotationMatrix)
-        
-        # print(scaleMatrix)
-        
-        # print(translationMatrix)#
-
-       
-        
-        # sys.exit()
-        
-        # pass
 
     def set_default_uniforms(self):
         
@@ -529,29 +495,7 @@ class AnimatedSprite():
         gameScreen.shaderPrograms[self.shader]['viewMatrix'].write(self.viewMatrix)
         gameScreen.shaderPrograms[self.shader]['orthographicMatrix'].write(self.orthographicMatrix)
    
-    
-        # print(gameScreen.windows[self.surface_to_draw_on].bg_offset_x)
-        # print(self.surface_to_draw_on)
-        # gameScreen.shaderPrograms[self.shader]['zoom'] = self.zoom
-        # gameScreen.shaderPrograms[self.shader]['screenZoom'] = gameScreen.windows[self.surface_to_draw_on].zoom
 
-        
-
-        # build transformation matrix
-
-        # refresh transformation matrix
-        # self.transformationMatrix = glm.mat4(1.0)
-        # self.transformationMatrix = glm.scale(self.transformationMatrix,glm.vec3(self.sprite.get_size()[0]/gameScreen.windows[self.surface_to_draw_on].win_width,self.sprite.get_size()[1]/gameScreen.windows[self.surface_to_draw_on].win_height,0.0))
-        # self.transformationMatrix = glm.rotate(self.transformationMatrix,glm.radians(self.direction),glm.vec3(1.0,0.0,0.0))
-        # self.transformationMatrix = glm.translate(self.transformationMatrix,glm.vec3(self.hurtbox.centerx+gameScreen.windows[self.surface_to_draw_on].bg_offset_x,self.hurtbox.centery+gameScreen.windows[self.surface_to_draw_on].bg_offset_y,0.0))
-
-        # # self.transformationMatrix = glm.scale(self.transformationMatrix,glm.vec3(self.zoom,self.zoom,0.0))
-        # # self.transformationMatrix = glm.scale(self.transformationMatrix,glm.vec3(self.sprite.get_size()[0]/gameScreen.windows[self.surface_to_draw_on].win_width,self.sprite.get_size()[1]/gameScreen.windows[self.surface_to_draw_on].win_height,0.0))
-
-
-        # gameScreen.shaderPrograms[self.shader]['transformationMatrix'].write(self.transformationMatrix)
-        # gameScreen.shaderPrograms[self.shader]['projectionMatrix'].write(gameScreen.windows[self.surface_to_draw_on].projectionMatrix)
-        
 
     # add shader dependent uniforms
     def set_shader_dependent_uniforms(self):
