@@ -108,8 +108,8 @@ class Screen(ContextManager):
     def __init__(self):
 
         # the final display which the window is drawn onto
-        # self.screen = pygame.display.set_mode((0,0),pygame.OPENGL|pygame.DOUBLEBUF|pygame.FULLSCREEN,vsync=1)
-        self.screen = pygame.display.set_mode((1200,1200),pygame.OPENGL|pygame.DOUBLEBUF,vsync=1)
+        self.screen = pygame.display.set_mode((0,0),pygame.OPENGL|pygame.DOUBLEBUF|pygame.FULLSCREEN,vsync=1)
+        # self.screen = pygame.display.set_mode((600,600),pygame.OPENGL|pygame.DOUBLEBUF,vsync=1)
 
         ContextManager.__init__(self)
 
@@ -181,11 +181,13 @@ class Screen(ContextManager):
             self.ctx.viewport = (0, 0, win.win_width, win.win_height)
             win.render_objects_gpu()
 
+
         
         # render windows
         self.ctx.disable(moderngl.BLEND)
         
         self.ctx.screen.use()
+        # self.ctx.viewport = (0, 0,2500, 1400)
         self.ctx.viewport = (0, 0, self.fullscreen_width, self.fullscreen_height)
         
 
@@ -674,13 +676,13 @@ class Window():
         # model = glm::translate(model, glm::vec3(-0.5f * size.x, -0.5f * size.y, 0.0f));
             # scale
         # translate, y is negative because of pygame
-        # self.modelMatrix = glm.translate(self.modelMatrix,glm.vec3(0,0,0))
+        self.modelMatrix = glm.translate(self.modelMatrix,glm.vec3(0,0,0))
         
         # # rotate, vec3 is axis we want to rotate on
-        # self.modelMatrix = glm.rotate(self.modelMatrix,0,glm.vec3(0,0,1))
+        self.modelMatrix = glm.rotate(self.modelMatrix,0,glm.vec3(0,0,1))
         
         # # scale x and y by zoom
-        # self.modelMatrix = glm.scale(self.modelMatrix,glm.vec3(self.zoom*self.sizeVector.x,self.zoom*self.sizeVector.y,0))
+        self.modelMatrix = glm.scale(self.modelMatrix,glm.vec3(self.zoom*self.sizeVector.x,self.zoom*self.sizeVector.y,0))
         
         ### VIEW MATRIX ###
         
@@ -693,7 +695,7 @@ class Window():
         ### ORTHOGRAPHIC MATRIX ###
         self.orthographicMatrix = glm.mat4()
         # self.orthographicMatrix = glm.ortho(0,gameScreen.windows[self.surface_to_draw_on].win_width,0,gameScreen.windows[self.surface_to_draw_on].win_height,0,0.1)
-        # self.orthographicMatrix = glm.ortho((-gameScreen.fullscreen_width/2)/gameScreen.zoom,(gameScreen.fullscreen_width/2)/gameScreen.zoom,(-gameScreen.fullscreen_height/2)/gameScreen.zoom,(gameScreen.fullscreen_height/2)/gameScreen.zoom,0,100)
+        self.orthographicMatrix = glm.ortho((-gameScreen.fullscreen_width/2)/gameScreen.zoom,(gameScreen.fullscreen_width/2)/gameScreen.zoom,(-gameScreen.fullscreen_height/2)/gameScreen.zoom,(gameScreen.fullscreen_height/2)/gameScreen.zoom,0,100)
 
     def set_default_uniforms(self):
             

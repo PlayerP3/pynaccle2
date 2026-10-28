@@ -467,7 +467,7 @@ class AnimatedSprite():
         self.viewMatrix = glm.mat4(1.0)
         
         # add offset, dont need it now, but when we add camera offset back it will be adjusting this view matrix
-        # self.viewMatrix = glm.translate(self.viewMatrix,glm.vec3(gameScreen.fullscreen_width/2,gameScreen.fullscreen_height/2,0))
+        self.viewMatrix = glm.translate(self.viewMatrix,glm.vec3(gameScreen.windows[self.surface_to_draw_on].bg_offset_x,-gameScreen.windows[self.surface_to_draw_on].bg_offset_y,0))
         
         ### ORTHOGRAPHIC MATRIX ###
         # self.orthographicMatrix = glm.mat4(1.0)

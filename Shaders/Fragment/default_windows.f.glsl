@@ -18,6 +18,7 @@ void main() {
 
     if (sample.a > 0 ){
         f_color = vec4(sample.r,sample.g,sample.b,sample.a*alpha);
+        // f_color = vec4(vec3(1.0 - texture(memSlot, uvMapping)), alpha);
     }
     else{
         discard;
