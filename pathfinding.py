@@ -189,7 +189,7 @@ class Node():
 # this is going to be a class that manages A star and has the graph, the paths everything
 class Pathfinding():
 
-    def __init__(self,pathing_type:str='regular',path_update_timer_min=0.3,path_update_timer_max=1.3) -> None:
+    def __init__(self,pathing_type:str='regular',path_update_timer_min=1,path_update_timer_max=2) -> None:
 
         self.pathing = []
         self.pathing_type = pathing_type
@@ -411,14 +411,14 @@ class Pathfinding():
 
         pass
 
-    def update_movement_vectors2(self,start_position:tuple,target_position:tuple) -> None:
+    def update_movement_vectors2(self,start_position:tuple,target_position:tuple,target_point=None) -> None:
 
             # set bullet direction/current angle
             direction_vectorX, direction_vectorY = Vector2(target_position) - Vector2(start_position)
 
             # update movement vector
             self.update_movement_vectors(unique_id='movement',direction_vectorX=direction_vectorX,direction_vectorY=direction_vectorY,
-                                                        acceleration=self.acceleration,Xcceleration_rate=0,max_value=self.acceleration,target_point=target_position)
+                                                        acceleration=self.acceleration,Xcceleration_rate=0,max_value=self.acceleration,target_point=target_point)
             
             
     def check_obstacle_collision(self):
@@ -497,15 +497,23 @@ class Pathfinding():
                         if len(self.pathing) > 1:
                             del self.pathing[0]
                 
-                        # if target position is the last tile then just stop all movement OR if pathing is empty
-                        if (self.pathing[0] == find_tile_centre(self.pathing_end_pos_tile)) or not self.pathing:
+                        # if the path only had one inside, meaning we have reached the end of the chasing state and should move ot somehtiogn else, currently just stops
+                        elif len(self.pathing) == 1:
+                            # self.pathing = [self.pathing_end_pos]
                             self.movement_vectors = {}
+                            self.pathing = []
                             self.update_path = False
+                            
+                            # self.update_movement_vectors2(start_position=self.pathing_start_pos,target_position=self.pathing[0],target_point=self.pathing[0])
+                            
                             return
                 
                     # update movement vectors
                     self.update_movement_vectors2(start_position=self.pathing_start_pos,target_position=self.pathing[0])
-            
+
+                elif not self.pathing:
+                    self.movement_vectors = {}
+                    
                 self.update_path = False
                 
             elif not self.update_path:
@@ -522,14 +530,22 @@ class Pathfinding():
                         if len(self.pathing) > 1:
                             del self.pathing[0]
                     
-                        # if target position is the last tile then just stop all movement
-                        if (self.pathing[0] == find_tile_centre(self.pathing_end_pos_tile)) or not self.pathing:
+                        # if the path only had one inside, meaning we have reached the end of the chasing state and should move ot somehtiogn else
+                        elif len(self.pathing) == 1:
+                            
+                            # this would make it so that it still moves to the player after reaching its end but it causes bugs where it keeps moving towards that point when reached the destination
+                            # self.pathing = [self.pathing_end_pos]
                             self.movement_vectors = {}
+                            self.pathing = []
+                                                        
+                            # self.update_movement_vectors2(start_position=self.pathing_start_pos,target_position=self.pathing[0],target_point=self.pathing[0])
                             return
-                
+        
                     # update movement vectors
-                    self.update_movement_vectors2(start_position=start,target_position=self.pathing[0])
+                    self.update_movement_vectors2(start_position=self.pathing_start_pos,target_position=self.pathing[0])
 
+                elif not self.pathing:
+                    self.movement_vectors = {}
             # if self.current_tile_position == self.pathing_gameObj_tile_pos:
             #         self.movement_vectors = {}
 

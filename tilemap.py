@@ -107,10 +107,7 @@ class Tilemap():
                 newObj.spawnLocation = ast.literal_eval(pos)
                 newObj.connectedChunk = chunkNo
                 
-                if className == 'Wall':
-                                    
-                    print(newObj.spawnLocation)
-                    
+            
 
                 # start building copy
                 if layer not in self.tilemap[chunkNo]:

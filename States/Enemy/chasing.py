@@ -4,6 +4,7 @@ from pygame.math import Vector2
 from pynaccle.statemachine import State
 from pynaccle.objectsystem import objectManager
 from pynaccle.tilemap import tilemapProcessor
+from pynaccle.utils import *
 
 class Chasing(State):
 
@@ -41,7 +42,11 @@ class Chasing(State):
         # update pathing and cache
         # self.parent_node.update_pathing_and_cache()
         self.parent_node.update_pathing_and_cache(start=self.parent_node.hurtbox.center,end=objectManager.player.hurtbox.center)
-        print(self.parent_node.hurtbox.center)
+        print(self.parent_node.pathing,'pathing')
+        print(self.parent_node.pathing_end_pos_tile,'end tile')
+        print(find_tile_centre(self.parent_node.pathing_end_pos_tile),'end tile center')
+        print(self.parent_node.hurtbox.center,'enemy center')
+        print(self.parent_node.update_path,'update path')
         # self.parent_node.draw_pathing()
 
         # # movement
