@@ -8,6 +8,7 @@ from .timer import Timer
 from .tilemap import tilemapProcessor
 from .globs import *
 from .objectsystem import objectManager
+from .configs import configData
 # from utils import *
 # from Drawing_TileMaps import engine
 
@@ -188,26 +189,25 @@ class Node():
 # this is going to be a class that manages A star and has the graph, the paths everything
 class Pathfinding():
 
-    def __init__(self,pathing_type:str='regular') -> None:
+    def __init__(self,pathing_type:str='regular',path_update_timer_min=0.3,path_update_timer_max=1.3) -> None:
 
         self.pathing = []
         self.pathing_type = pathing_type
-        self.update_path_timer = Timer(timer_replay=True,timer_limit=0.5)
-        self.update_path = True
-
-        # store the end and start point in variables
-        self.pathing_self_tile_pos = (0,0)
-        self.pathing_gameObj_tile_pos = (0,0) # this is topleft coordinate of tile the target is on
-        self.pathing_gameObj_hurtbox_pos = (0,0) # this is the actual coordinate of the target
+        self.update_path_timer = Timer(timer_replay=True,timer_limit=random.uniform(path_update_timer_min,path_update_timer_max))
+        self.update_path = True # needs to eb true so we force inital astar
+        
+        # start and end point variables
+        self.pathing_start_pos = (0,0)
+        self.pathing_end_pos = (0,0)
 
         # create variable for the deciding stack and the final stack
         self.deciding_stack = []
 
         # final stack needs to have the start point because that is where we begin and choose to move to next
-        self.final_stack = [self.pathing_self_tile_pos]
+        self.final_stack = []
 
         # create variable for the current node. It starts with the start point and then moves from there
-        self.current_node = self.pathing_self_tile_pos
+        self.current_node = None
         
         # variable for allowing the end point to be switched,
         self.target_position_change = False
@@ -292,11 +292,6 @@ class Pathfinding():
             # first sort the open stack based on what has the lowest f cost function. THe one with the lowest f cost function becomes closed and is added to the closed stack
 
             open_stack = sorted(open_stack, key=lambda x: tilemapProcessor.astar_graph[x].total)
-
-            # print(f'Open stack is {open_stack}')
-            # print(f'Start point is {open_stack}, closed stack is {closed_stack}')
-            # current node is node with smallest total in open stack
-
             current_node = open_stack[0]
 
             # remove current node from open stack and add to closed
@@ -371,6 +366,24 @@ class Pathfinding():
     
 
         return []
+    
+    @property
+    def centered_pathing(self):
+        
+        if not self.pathing:
+            return []
+        
+        elif self.pathing:
+            return [(x + (configData.loadedConfigs['params']['tileSize']//2), y+(configData.loadedConfigs['params']['tileSize']//2)) for x,y in self.pathing]    
+    
+    # tile position of start and end pos
+    @property
+    def pathing_start_pos_tile(self):
+        return find_tile_topleft(self.pathing_start_pos)
+    
+    @property
+    def pathing_end_pos_tile(self):
+        return find_tile_topleft(self.pathing_end_pos)
     
     def bigger_than_tile_size(self,node:Node):
 
@@ -457,20 +470,25 @@ class Pathfinding():
             # self.detect_wall_collisions()
             # self.check_obstacle_collision()
 
-    def update_pathing_and_cache(self):
+    def update_pathing_and_cache(self,start,end):
         
             # determine pathing type
             self.determine_pathing_type()
+            
+            # update pathing start and end
+            self.pathing_start_pos = start
+            self.pathing_end_pos = end
 
+            # if time to update path
             if self.update_path:
-                self.pathing_gameObj_tile_pos = find_tile_topleft(self.pathing_gameObj_hurtbox_pos)
-                # get pathing
-                self.pathing = self.a_star(start=self.current_tile_position,end=self.pathing_gameObj_tile_pos)
-        
-                if self.pathing:
                 
+                # run astar and get update pathing
+                self.find_pathing_w_astar()
+                                
+                if self.pathing:
+                    
                     # find length to target
-                    self.length_to_target = find_dist_between_points(self.pathing[0],self.hurtbox.center)
+                    self.length_to_target = find_dist_between_points(self.pathing[0],self.pathing_start_pos)
 
                     # if we are really close to target then move to next point in path
                     if self.length_to_target <= 1 :
@@ -478,26 +496,24 @@ class Pathfinding():
                         # if the pathing is longer than 1 then delete path and move on
                         if len(self.pathing) > 1:
                             del self.pathing[0]
-                    
-                        # set target to be the next thing in the pathing
-                        self.target_position = self.pathing[0]
                 
-                        # if target position is the last tile then just stop all movement
-                        if self.current_tile_position == self.pathing_gameObj_tile_pos:
+                        # if target position is the last tile then just stop all movement OR if pathing is empty
+                        if (self.pathing[0] == find_tile_centre(self.pathing_end_pos_tile)) or not self.pathing:
                             self.movement_vectors = {}
+                            self.update_path = False
                             return
                 
-                        # update movement vectors
-                        self.update_movement_vectors2(start_position=self.hurtbox.center,target_position=self.target_position)
-                    
+                    # update movement vectors
+                    self.update_movement_vectors2(start_position=self.pathing_start_pos,target_position=self.pathing[0])
+            
                 self.update_path = False
                 
-            if not self.update_path:
+            elif not self.update_path:
                 
                 if self.pathing:
                                 
                     # find length to target
-                    self.length_to_target = find_dist_between_points(self.pathing[0],self.hurtbox.center)
+                    self.length_to_target = find_dist_between_points(self.pathing[0],self.pathing_start_pos)
 
                     # if we are really close to target then move to next point in path
                     if self.length_to_target <= 1 :
@@ -506,94 +522,27 @@ class Pathfinding():
                         if len(self.pathing) > 1:
                             del self.pathing[0]
                     
-                        # set target to be the next thing in the pathing
-                        self.target_position = self.pathing[0]
-                
                         # if target position is the last tile then just stop all movement
-                        if self.current_tile_position == self.pathing_gameObj_tile_pos:
+                        if (self.pathing[0] == find_tile_centre(self.pathing_end_pos_tile)) or not self.pathing:
                             self.movement_vectors = {}
                             return
                 
-                        # update movement vectors
-                        self.update_movement_vectors2(start_position=self.hurtbox.center,target_position=self.target_position)
+                    # update movement vectors
+                    self.update_movement_vectors2(start_position=start,target_position=self.pathing[0])
 
-            self.pathing_gameObj_tile_pos = find_tile_topleft(self.pathing_gameObj_hurtbox_pos)
-            if self.current_tile_position == self.pathing_gameObj_tile_pos:
-                                        self.movement_vectors = {}
-    # def update_pathing_and_cache(self):
-        
-    #     # determine pathing type
-    #     self.determine_pathing_type()
-
-    #     # if it is not time to update the path, so the enemy is still following the path
-    #     if not self.update_path:
-
-    #         if self.pathing_type == 'astar':
-                
-    #             # if there is no path for the enemy to follow, let them follow whatever gameobj pos, or just let them stop moving we'll think about it
-    #             if not self.pathing:
-    #                 self.movement_vectors = {}
-                    
-    #             #     self.target_position = self.pathing_gameObj_hurtbox_pos
-                    
-    #             #     self.pathing = [self.target_position]
-
-    #             #     # update movement vectors
-    #             #     self.update_movement_vectors2(start_position=self.hurtbox.center,target_position=self.target_position)
-                    
-    #             # bug where update is false, so we come here, but self.pathing has the initial target position in it so it tis to run this code 
-    #             # but before the in ital tagret position is None because we havent updated it yet
-    #             elif self.pathing:
-            
-    #                 # find length to target
-    #                 self.length_to_target = find_dist_between_points(self.pathing[0],self.hurtbox.center)
-
-    #                 # if we are really close to target then move to next point in path
-    #                 if self.length_to_target <= 2 :
-                        
-    #                     # if the pathing is longer than 1 then delete path and move on
-    #                     if len(self.pathing) > 1:
-    #                         del self.pathing[0]
-                            
-    #                     # set target to be the next thing in the pathing
-    #                     self.target_position = self.pathing[0]
-                        
-    #                     # if target position is the last tile then just stop all movement
-    #                     if self.current_tile_position == self.pathing_gameObj_tile_pos:
-    #                         self.movement_vectors = {}
-    #                         return
-
-    #                     else:
-
-    #                         # update pathing
-    #                         self.update_movement_vectors2(start_position=self.hurtbox.center,target_position=self.pathing[0])
-                            
-                    
-    #     # if it is time to update
-    #     elif self.update_path:
-
-    #         ## check if pathing needs to be changed
-    #         if self.pathing_type == 'astar':
-                
-    #             # update path cache, new pathing is set in function
-    #             self.update_path_cache()
-
-    #         # set update pathing to false
-    #         self.update_path = False
-
+            # if self.current_tile_position == self.pathing_gameObj_tile_pos:
+            #         self.movement_vectors = {}
 
     # function to see how we insert the self rect center into the pathing list
     def adjust_pathing_start_end_position(self):
         
-        
         if len(self.pathing) > 1:
-
 
             # get first and second points, first point, second point
             f,s = self.pathing[0:2]
 
             # find distance to self hurtvbox center, dist from self to second point, dist from first point to second point
-            self_to_second = find_dist_between_points(self.hurtbox.center,s)
+            self_to_second = find_dist_between_points(self.pathing_start_pos,s)
             first_to_second = find_dist_between_points(s,f)
             
             # if first_to_second < self_to_second:
@@ -607,21 +556,18 @@ class Pathfinding():
                 
                 self.pathing = self.pathing[1:]
                 
+                # insert pos as first posiiton in pathing so we arrive at that  node already and kick start the movement code
+                # self.pathing.insert(0,self.pathing_start_pos)
+                
 
    
-    def update_path_cache(self):
-
-        # change entitiy start point
-        self.start_position = self.current_tile_position
-
-        # change what the current entity end point is. 
-        self.pathing_gameObj_tile_pos = find_tile_topleft(self.pathing_gameObj_hurtbox_pos)
-
+    # def update_path_cache(self):
+    def find_pathing_w_astar(self) -> None:
+        
         # create key for path cache
-        key_for_cache = (self.start_position[0],self.start_position[1],self.pathing_gameObj_tile_pos[0],self.pathing_gameObj_tile_pos[1])
+        key_for_cache = (*self.pathing_start_pos_tile,*self.pathing_end_pos_tile)
         
         # go through each path in the cache and check if the start and end point is equal to the current start and end point
-        # for path in path_cache:
         if key_for_cache in objectManager.path_cache:
 
             # get path from the cache
@@ -631,45 +577,28 @@ class Pathfinding():
             # this means if youre on a tile that belongs to a cached path, you dont need to run astar again
             # or also if the start point and end point are in one of the path caches or ((self.start_position in path) and (self.target_position in path))
             # if ((self.start_position in path) and (self.target_position == path[-1])):
-            if (self.start_position in path) and (self.pathing_gameObj_tile_pos in path):
+            if (self.pathing_start_pos_tile in path) and (self.pathing_end_pos_tile in path):
 
                 # find the index for the start point
-                start_position_index = path.index(self.start_position)
+                start_position_index = path.index(self.pathing_start_pos_tile)
 
                 # find index for end point
-                pathing_gameObj_tile_pos_index = path.index(self.pathing_gameObj_tile_pos)
+                end_position_index = path.index(self.pathing_end_pos_tile)
 
                 # now do diferent things depending on what
                 # if the start point is in the path, then the pathing should begin from that point onwards, rather than the start of the full path. shouldnt it be +1?
-                self.pathing = path.copy()[start_position_index:pathing_gameObj_tile_pos_index]
-
-                # print(start_position_index)
-                # print(pathing_gameObj_tile_pos_index)
-                # print(path)
-                # print(self.pathing)
-                # if the path is empty then set player position as target in pathing
-                # if not self.pathing:
-                #     self.pathing = [self.pathing_gameObj_hurtbox_pos]
-
+                self.pathing = path.copy()[start_position_index:end_position_index]
+                
+                # center pathing 
+                self.pathing = self.centered_pathing
+                
                 # we want to properly set the start position depending on how close the first point or the object center is to the next point
                 self.adjust_pathing_start_end_position()
-
-                self.target_position = self.pathing[0]
-                
-                # update movement and exit function
-                self.update_movement_vectors2(start_position=self.hurtbox.center,target_position=self.target_position)
-                
-                print(path_to_return,'ptrCACHE')
-                print(self.target_position,'tgpCACHE')
-                print(self.pathing_gameObj_hurtbox_pos,'player huirtbocCACHE')
-                print(self.pathing_gameObj_tile_pos,'player tileCACHE')
-                print(self.current_tile_position,'enemy tileCACHE')
-                print(self.hurtbox.center,'enemy hrtuboxCACHE')
-
+                        
                 return 
 
         # get pathing
-        self.pathing = self.a_star(start=self.start_position,end=self.pathing_gameObj_tile_pos)
+        self.pathing = self.a_star(start=self.pathing_start_pos_tile,end=self.pathing_end_pos_tile)
 
         # if no pathing then return nothing
         if not self.pathing:
@@ -681,58 +610,27 @@ class Pathfinding():
         # based on the start and end point of the cache create a key for the path to return dictionary
         path_start = path_to_return[0]
         path_end = path_to_return[-1]
-
+        
         # create key for dictionary
-        key_to_return = (path_start[0],path_start[1],path_end[0],path_end[1])
+        key_to_return = (*path_start,*path_end)
+        
+        # center pathing 
+        self.pathing = self.centered_pathing
 
         # after a star is done change what the start and end coors are
         self.adjust_pathing_start_end_position()  # ok so this is actually important because we dont need the current tile start position, what we need is where the entity actually is
 
-        # change the ending in the path to be the player position, this is important because we want the entitiy to chase the player when close enough rather than the tile they are on
-        # self.pathing[-1] = self.pathing_gameObj_hurtbox_pos
-
-        # reset what the target is for the actual 
-        # movememt function which follows the path
-        self.target_position = self.pathing[0]
-        
-        print(path_to_return,'ptr')
-        print(self.target_position,'tgp')
-        print(self.pathing_gameObj_hurtbox_pos,'player huirtboc')
-        print(self.pathing_gameObj_tile_pos,'player tile')
-        print(self.current_tile_position,'enemy tile')
-        print(self.hurtbox.center,'enemy hrtubox')
-
-        # update movement vectors
-        self.update_movement_vectors2(start_position=self.hurtbox.center,target_position=self.target_position)
-
-        # set new key and path
-        new_key = key_to_return
-        new_path = path_to_return
-
         # if a new path was found in the function
-        if new_path:
+        if path_to_return:
 
             # check whether that new key is already a key
-            if new_key not in objectManager.path_cache:
+            if key_to_return not in objectManager.path_cache:
 
                 # copy the path
-                copy_path = new_path.copy()
+                copy_path = path_to_return.copy()
 
                 # add path to path cache
-                # self.path_cache.append(copy_path)
-                objectManager.path_cache[new_key] = copy_path
-
-    
-
-
-    def draw_pathing(self):
-        return
-
-        if len(self.pathing) >= 2:
-
-            draw_lines(points=self.pathing)
-
-
+                objectManager.path_cache[key_to_return] = copy_path
 
 
 
