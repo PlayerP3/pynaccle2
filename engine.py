@@ -91,6 +91,9 @@ class Engine(GameStateMachine):
     
                 # add the config to the object
                 self.configData.add_config(f)
+        
+        # add game delta to config
+        self.configData.loadedConfigs['params']['gameDelta'] = 1/self.configData.loadedConfigs['params']['gameFPS']
 
         # add windows to screen
         with open(windows,'r') as winConfig:

@@ -54,6 +54,10 @@ class Enemy(Moveable_Object,Pathfinding,StateMachine):
 
         if self.state.done:
             self.transition_to_next_state()
+            
+    # action to take after arriving at pathing destination
+    def action_after_reaching_destination(self):
+        pass
     
     
 
