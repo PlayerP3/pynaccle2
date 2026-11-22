@@ -77,7 +77,7 @@ def build_true_clearance_graph():
 
 class Node():
 
-    def __init__(self,cost:int=0,heuristic:int=0,topleftcoors:tuple=(0,0),neighbours:list=[],clearance:int=1) -> None:
+    def __init__(self,cost:int=0,heuristic:int=0,topleftcoors:tuple=(0,0),neighbours:list=None,clearance:int=1) -> None:
 
         # the cost from moving from the previous node to this current node. There can be multiple previous nodes to this node, but for this we will assume they all have the same cost
         self.cost = cost
@@ -99,7 +99,7 @@ class Node():
         self.center_coors = find_tile_centre(point=topleftcoors)
 
         # the neighbours of the node and the cost from this node to that node
-        self.neighbours = neighbours
+        self.neighbours = neighbours or []
 
         # the node that it passed through. this is updated when the node is expanded to, not when it is itself expanded
         self.previous_node = None
@@ -417,7 +417,7 @@ class Pathfinding():
             direction_vectorX, direction_vectorY = Vector2(target_position) - Vector2(start_position)
 
             # update movement vector
-            self.update_movement_vectors(unique_id='movement',direction_vectorX=direction_vectorX,direction_vectorY=direction_vectorY,
+            self.update_movement_vectors(unique_id='pathing',direction_vectorX=direction_vectorX,direction_vectorY=direction_vectorY,
                                                         acceleration=self.acceleration,Xcceleration_rate=0,max_value=self.acceleration,target_point=target_point)
             
             
@@ -471,6 +471,12 @@ class Pathfinding():
             # self.check_obstacle_collision()
 
     def update_pathing_and_cache(self,start,end):
+        
+            # if no end then theres nothing to chase
+            if not end:
+                self.movement_vectors = {}
+                self.pathing = []
+                return
         
             # determine pathing type
             self.determine_pathing_type()

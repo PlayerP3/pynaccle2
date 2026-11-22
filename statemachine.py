@@ -19,6 +19,7 @@ class StateMachine():
         self.previous_state:State = None
         self.next_state:State = None
 
+        super().__init__()
 
     # # init state machine
     # def init(self):

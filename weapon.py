@@ -7,9 +7,6 @@ from .objectsystem import objectManager
 
 # from statemachine import StateMachine
 
-
-
-
 class Weapon():
 
     def __init__(self,name:str='Weapon',magazine_size:int=8,total_ammo_stock:int=0,select_fire:str='fullauto',
@@ -342,7 +339,7 @@ class Weapon():
                 for blt in to_remove:
 
                     # remove from queue and add to acitve pool
-                    objectManager.active_pool.append(blt)
+                    objectManager.add_game_object_to_active_pool(blt)
                     self.projectile_queue.remove(blt)
 
             # if empty start burst countdown to prevent shooting
@@ -374,7 +371,7 @@ class Weapon():
                 for blt in to_remove:
 
                     # remove from queue and add to acitve pool
-                    objectManager.active_pool.append(blt)
+                    objectManager.add_game_object_to_active_pool(blt)
                     self.projectile_queue.remove(blt)
 
             # if empty start burst countdown to prevent shooting
@@ -501,11 +498,11 @@ class Bullet(Moveable_Object):
 
             # ENEMY OBJECT OF ORIGIN COLLISIONS
             # if projectile is colliding with smth from the enemy or self.object_of_origin == "None"
-            if game_object.object_of_origin == 'Enemy' :
+            if game_object.object_of_origin in ['Enemy','Zombie'] :
 
 
                 # if it is the boss itself that has been collided with
-                if game_object.__class__.__name__ == "Enemy":
+                if game_object.__class__.__name__ in ["Enemy",'Zombie']:
 
                     self.apply_damage(gameobj=game_object,damage=damage)
                     

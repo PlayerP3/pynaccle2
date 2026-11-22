@@ -12,42 +12,17 @@ class Chasing(State):
 
         State.__init__(self)
 
-    def enter(self):
-        
-        # self.parent_node.pathing_gameObj_hurtbox_pos = (-64,-425)
-        # self.parent_node.pathing_gameObj_hurtbox_pos = objectManager.player.hurtbox.center
-        
-        # update pathing and cache
-        # self.parent_node.update_pathing_and_cache()
-        self.parent_node.update_pathing_and_cache(start=self.parent_node.hurtbox.center,end=objectManager.player.hurtbox.center)
-        
-        
-
-        pass
-
-
     def update(self):
 
         # submit event processing
         self.submit_event_processing()
         
-        # print(self.parent_node.pathing)
-        # print(self.parent_node.movement_vectors)
-        
-        # print(self.parent_node.current_tile_position,'currentTile')
-        
-        # self.parent_node.pathing_gameObj_hurtbox_pos = objectManager.player.hurtbox.center
-        # self.parent_node.pathing_gameObj_hurtbox_pos = (-64,-425)
+        # set pathing end pos
+        self.parent_node.set_pathing_end_pos()
 
         # update pathing and cache
         # self.parent_node.update_pathing_and_cache()
-        self.parent_node.update_pathing_and_cache(start=self.parent_node.hurtbox.center,end=objectManager.player.hurtbox.center)
-        print(self.parent_node.pathing,'pathing')
-        print(self.parent_node.pathing_end_pos_tile,'end tile')
-        print(find_tile_centre(self.parent_node.pathing_end_pos_tile),'end tile center')
-        print(self.parent_node.hurtbox.center,'enemy center')
-        print(self.parent_node.update_path,'update path')
-        # self.parent_node.draw_pathing()
+        self.parent_node.update_pathing_and_cache(start=self.parent_node.hurtbox.center,end=self.parent_node.pathing_end_pos)
 
         # # movement
         self.parent_node.move_and_collide()
@@ -55,13 +30,34 @@ class Chasing(State):
         # draw surface
         self.parent_node.submit_to_render()
 
-        # self.parent_node.draw_surface(position=self.parent_node.hurtbox.center)
-        # self.parent_node.draw_rect(position=self.parent_node.hurtbox.center)
-
         self.parent_node.update_position()
+        
+        # end condition
+        self.end_condition()
 
+    def end_condition(self):
+        
         if self.parent_node.health <= 0:
             self.emit('DEATH')
-
-        elif objectManager.player.current_tile_position not in tilemapProcessor.accessible_tiles:
-            self.emit('IDLE')
+            
+        # if a distraction object is thrown thrown then change to distract state
+        elif self.parent_node.priorityGameObjectType in ['Distraction']:
+            
+            if self.parent_node.targetGameObject.currentState == 'DISTRACTING':
+                self.emit('DISTRACTED')
+            
+        # # check if we have a target game obejct
+        elif self.parent_node.targetGameObject:
+            
+            # check if we are in range of the target game object
+            if find_dist_between_points(self.parent_node.targetGameObject.hurtbox.center,self.parent_node.hurtbox.center) <= self.parent_node.distanceToTriggerAttackState:
+                
+                # if some other thing maybe attack
+                self.emit('ATTACKING')
+    
+        # no pathing means that it has reached the end point
+        elif not self.parent_node.pathing:
+            
+            if not self.parent_node.targetGameObject:
+                self.emit('IDLE')
+                

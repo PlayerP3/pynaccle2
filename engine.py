@@ -67,7 +67,7 @@ class Engine(GameStateMachine):
 
     # def init(self,states:dict={},beginningState:str='START',tilemapPath:str='',classMappings:dict={},player:object=None,tileSize:int=32):
     def init(self,states:dict={},beginningState:str='SPLASH',tilemapJSONDir:str='tilemaps',classMappings:dict={},
-             windows:str='configs/config_window.json',hitboxMetadataJSON:str='',configs:list=[]):
+             windows:str='configs/config_window.json',hitboxMetadataJSON:str='',configs:list=[],gameObjectClass_inactivePoolNumber:dict={}):
 
         # set path to game
         # self.gamePath = gamePath
@@ -117,6 +117,13 @@ class Engine(GameStateMachine):
                 boxMetadata = json.load(hitboxMetadataFile)
 
             hitboxSystem.metaData = boxMetadata
+            
+        # if some inactive pools are given
+        if gameObjectClass_inactivePoolNumber:
+            
+            for gameObjectClass,inactivePoolNumber in gameObjectClass_inactivePoolNumber.items():
+                
+                self.objectManager.inactive_pool[gameObjectClass.__name__] = [gameObjectClass() for i in range(inactivePoolNumber)]
 
     def run(self):
 

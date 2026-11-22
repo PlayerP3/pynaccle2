@@ -31,7 +31,7 @@ class Moveable_Object(AnimatedSprite):
 
                  sine_amplitude:float=10,sine_frequency:float=10,
 
-                 general_explosion_immunity:bool=None,self_explosion_immunity:bool=None,collision_type='rect',
+                 general_explosion_immunity:bool=None,self_explosion_immunity:bool=None,collision_type='rect',canRicochetOffWalls:bool=False,
 
                  x_metres_before_collision_detection:float=530,x_metres_before_homing_detection:float=1,
 
@@ -102,8 +102,8 @@ class Moveable_Object(AnimatedSprite):
         self.decceleration_rate = decceleration_rate
         self.stamina = stamina      
 
-
-        
+        # variable to determine whether things can bounce off walls
+        self.canRicochetOffWalls = canRicochetOffWalls        
 
         # set knockback variable, if knocked back then accelration becomes this value
         self.knockback_strength = knockback_strength # this is what actually affects overlap, higher strength reduces overlap, lower strength increases overlap of colliding objects, assuming resistance is constant
@@ -359,6 +359,8 @@ class Moveable_Object(AnimatedSprite):
 
         active_pool.remove(self)
         inactive_pool.append(self)
+        
+   
 
     # what to do on death
     # def on_death(self):
@@ -579,7 +581,7 @@ class Moveable_Object(AnimatedSprite):
     # concept of unique id is that a single object can only apply a single vector to the moveable object
     def update_movement_vectors(self,unique_id:int,direction_vectorX:float,direction_vectorY:float,acceleration:float=1,
                                 Xcceleration_rate:float=delta,Xcceleration_rate_change:str='positive',max_value:float=1,reduce_on_wall_collision:bool=False,
-                                reset_on_max_value:bool=False,target_point:tuple = None) -> None:
+                                wall_collisionX:bool=False,wall_collisionY:bool=False,reset_on_max_value:bool=False,target_point:tuple = None) -> None:
 
         self.movement_vectors.update({unique_id:{"direction_vectorX":direction_vectorX,
                                       "direction_vectorY":direction_vectorY,
@@ -588,7 +590,9 @@ class Moveable_Object(AnimatedSprite):
                                       "Xcceleration_rate_change":Xcceleration_rate_change,
                                       "max_value":max_value,"reduce_on_wall_collision":reduce_on_wall_collision,
                                       "reset_on_max_value":reset_on_max_value,
-                                      "target_point":target_point}})
+                                      "target_point":target_point,
+                                      "wall_collisionX":wall_collisionX,
+                                      "wall_collisionY":wall_collisionY}})
 
 
     # find surrounding tiles
@@ -873,7 +877,7 @@ class Moveable_Object(AnimatedSprite):
         # handle overshooting
         if target_point:
 
-            if ((Vector2(target_point) - Vector2(position_before_movement)).length() < (Vector2(self.hurtbox.center) - Vector2(position_before_movement)).length()):
+            if find_dist_between_points(target_point,position_before_movement) < find_dist_between_points(self.hurtbox.center,position_before_movement):
 
                 self.hurtbox.center = target_point
 
@@ -915,7 +919,6 @@ class Moveable_Object(AnimatedSprite):
 
         if self.__class__.__name__ == "Wall":
             return
-
 
         # find surrounding objects
         self.find_surrounding_game_objects()  
@@ -994,7 +997,6 @@ class Moveable_Object(AnimatedSprite):
 
     # function for both movement and collisions
     def move_and_collide(self):
-
         
         # store position before movement
         position_before_movement = self.hurtbox.center
@@ -1014,8 +1016,6 @@ class Moveable_Object(AnimatedSprite):
         # print(f'Before: {len(self.movement_vectors)}')
         # vectors to delete
         vectors_to_delete = []
-        wallcollisionX = False
-        wallcollisionY = False
 
         # if x direction vector is positive or negative return acceleration for that vector
         positiveXaccel = []
@@ -1053,10 +1053,15 @@ class Moveable_Object(AnimatedSprite):
             max_value = movement_info["max_value"]
             reduce_on_wall_collision = movement_info["reduce_on_wall_collision"]
             reset_on_max_value = movement_info["reset_on_max_value"]
+            wallcollisionX = movement_info["wall_collisionX"]
+            wallcollisionY = movement_info["wall_collisionY"]
             target_point = movement_info["target_point"]
 
             # wall collision acceleration code
-            if reduce_on_wall_collision:
+            # if reduce_on_wall_collision:
+            #     wall_colliding_vectors.append(unique_id)
+                
+            if wallcollisionX or wallcollisionY:
                 wall_colliding_vectors.append(unique_id)
             # Actual movement function
 
@@ -1123,7 +1128,6 @@ class Moveable_Object(AnimatedSprite):
 
 
             ### handling wall collision acceleration changes
-
             if not reduce_on_wall_collision:
 
                 # adding accelerations to appropriate lists
@@ -1148,13 +1152,12 @@ class Moveable_Object(AnimatedSprite):
         if vectors_to_delete:
             for vector in vectors_to_delete:
                 del self.movement_vectors[vector]
-
+        
         #########
 
         # moving the objectz        
         self.hurtbox.centerx += self.movement[0]
         self.collision_check(axis='x')
-        
         
         self.hurtbox.centery += self.movement[1]
         self.collision_check(axis='y')
@@ -1200,6 +1203,9 @@ class Moveable_Object(AnimatedSprite):
                     if self.movement_vectors[vec]["max_value"] > 0:
                         self.movement_vectors[vec]["acceleration"] = min(self.movement_vectors[vec]["acceleration"],self.movement_vectors[vec]["max_value"])
 
+                # reset wall colision var
+                self.movement_vectors[vec]['wall_collisionX'] = False
+                
                 # if positive
             if wallcollisionY:
                 self.movement_vectors[vec]["direction_vectorY"] *= -1
@@ -1235,20 +1241,30 @@ class Moveable_Object(AnimatedSprite):
                     if self.movement_vectors[vec]["max_value"] > 0:
                         self.movement_vectors[vec]["acceleration"] = min(self.movement_vectors[vec]["acceleration"],self.movement_vectors[vec]["max_value"])
 
-
+                # reset wall collision var
+                self.movement_vectors[vec]['wall_collisionY'] = False
+                
+            # get new direction
+            # find current angle
+            current_angle = math.atan2(self.movement_vectors[vec]["direction_vectorY"],self.movement_vectors[vec]["direction_vectorX"]) 
+            self.direction = math.floor((math.degrees(current_angle)+90)% 360)
+                
             # if wallcollisionX or wallcollisionY:
             #     self.movement_vectors[vec]["direction_vectorX"],self.movement_vectors[vec]["direction_vectorY"] = Creative_Mode.project_vector(Vector2(2,2),Vector2(self.movement_vectors[vec]["direction_vectorX"],self.movement_vectors[vec]["direction_vectorY"]))
         # print(f'Acc after collision = {self.movement_vectors}\n')
         # apply decceleration
         # self.apply_decceleration()
+        
+        
 
         # handle overshooting
         if target_point:
             
 
-            if ((Vector2(target_point) - Vector2(position_before_movement)).length() <= (Vector2(self.hurtbox.center) - Vector2(position_before_movement)).length()):
+            if  ((Vector2(target_point) - Vector2(position_before_movement)).length() <= (Vector2(self.hurtbox.center) - Vector2(position_before_movement)).length()):
                 
-                pass
+                self.hurtbox.center = target_point
+                
                 # # move to next point in pathing
                 # if self.pathing:
                             
@@ -1442,7 +1458,6 @@ class Moveable_Object(AnimatedSprite):
 
         # dvidie by 100
         percentage_chance = percentage_chance/100
-
 
         if percentage_chance >= 1:
             percentage_chance = 1

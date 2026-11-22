@@ -157,12 +157,12 @@ class Roulette(Interactable):
     def collision_check(self,axis:str='y'):
 
         self.state.collision_check()
-        pass
+
 
     def handle_collision(self,axis:str='y'):
 
         self.state.handle_collision()
-        pass
+        
 
     def update_data(self):
 

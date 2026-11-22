@@ -703,4 +703,9 @@ def find_class_in_array(targetClass:object='',array:list=[]):
     
     
 
-    
+def find_point_on_circle_radius(radius:float,circle_center:tuple):
+
+    random_angle = random.randint(0,359)
+
+    # return point on circle at that angle
+    return (circle_center[0] + (radius * math.cos(math.radians(random_angle))),circle_center[1] + (radius * math.sin(math.radians(random_angle))))

@@ -1,21 +1,23 @@
 import pygame,json
 from pygame.math import Vector2
-from pynaccle.pathfinding import Pathfinding
-from pynaccle.moveableobject import Moveable_Object
-from pynaccle.utils import *
-from pynaccle.statemachine import StateMachine
-from pynaccle.objectsystem import objectManager
+from .pathfinding import Pathfinding
+from .moveableobject import Moveable_Object
+from .utils import *
+from .statemachine import StateMachine
+from .objectsystem import objectManager
 from .States.Enemy.idle import Idle
 from .States.Enemy.chasing import Chasing
 from .States.Enemy.roaming import Roaming
 from .States.Enemy.death import Death
+from .States.Enemy.attacking import Attacking
+from .States.Enemy.distracted import Distracted
 
 # from ItemBench import ItemPools,ItemPoolsReset,remove_from_itempool,add_to_itempool
 pygame.font.init()
 
 class Enemy(Moveable_Object,Pathfinding,StateMachine):
 
-    def __init__(self):
+    def __init__(self,targetGameObjectTypePriorityList=None,distanceToTriggerAttackState:float=30):
 
         Moveable_Object.__init__(self)
         Pathfinding.__init__(self)
@@ -24,10 +26,14 @@ class Enemy(Moveable_Object,Pathfinding,StateMachine):
         # movement
         self.movementx = [0,0] # index 0 is no movememnt, -1 left, 1 right
         self.movementy = [0,0] # index 0 is no movement, -1 up, 1 down
-
-        # self.starter_deck = {}
-        # self.deck = Deck()
-
+        
+        # game object that is a target for attack
+        self._targetGameObject = None
+        self.targetGameObjectTypePriorityList = targetGameObjectTypePriorityList or ['Distraction','Player']
+        
+        # distance to the target game object that triggers some state change
+        self.distanceToTriggerAttackState = distanceToTriggerAttackState
+        
         # target position for shooting
         self.shooting_target_position = (0,0)
 
@@ -37,7 +43,9 @@ class Enemy(Moveable_Object,Pathfinding,StateMachine):
         # init state machine
         self.states = {'IDLE':Idle(),
                        'CHASING':Chasing(),
-                       'DEATH':Death()}
+                       'DEATH':Death(),
+                       'DISTRACTED':Distracted(),
+                       'ATTACKING':Attacking()}
         
         # set parent node for player states
         for x in self.states:
@@ -51,12 +59,12 @@ class Enemy(Moveable_Object,Pathfinding,StateMachine):
     def update(self):
     
         self.state.update()
-
+        
         if self.state.done:
             self.transition_to_next_state()
-            
-    # action to take after arriving at pathing destination
-    def action_after_reaching_destination(self):
+                        
+    # action to take whilst in idle
+    def select_state(self):
         pass
     
     
@@ -99,34 +107,50 @@ class Enemy(Moveable_Object,Pathfinding,StateMachine):
                                     acceleration=((game_object.overlap_resolution_strength/self.overlap_resolution_resistance)),Xcceleration_rate=self.decceleration_rate,Xcceleration_rate_change='negative',max_value=0,
                                     reduce_on_wall_collision=True,reset_on_max_value=True)
 
-
-    def run_behaviour(self):
+    # choose position that the enemy targets with its pathfinding
+    def set_pathing_end_pos(self,pos:tuple=None):
         
-        # only show the orbital and draw it if it is active
-        if self.is_active:
+        if not pos:
+            if self.targetGameObject:
+                self.pathing_end_pos = self.targetGameObject.hurtbox.center
+                
+            elif not self.targetGameObject:
+                self.pathing_end_pos = None
+                
+        elif pos:
+            self.pathing_end_pos = pos
 
-            # update position
-            self.update_position()
+    @property
+    def priorityGameObjectType(self):
+        
+        if not self.targetGameObjectTypePriorityList:
+            return None
+        
+        elif self.targetGameObjectTypePriorityList:
+            
+            # find if the top priority is in the list
+            topPriorityInActivePool = [goType for goType in self.targetGameObjectTypePriorityList if goType in objectManager.active_pool][0]
+            
+            return topPriorityInActivePool
+        
+    @property
+    def targetGameObject(self):
+        
+        # choose the closest game object of the priority
+        if self.priorityGameObjectType:
+            
+            # subset and find the closest obj
+            self._targetGameObject = min(objectManager.active_pool[self.priorityGameObjectType],key=lambda x:find_dist_between_points(self.hurtbox.center,x.hurtbox.center))
 
-            # find game objects
-            # self.find_game_objects_in_area()
+        elif not self.priorityGameObjectType:
+            
+            self._targetGameObject = None
+            
+        return self._targetGameObject
+    
+    @targetGameObject.setter
+    def targetGameObject(self,value):
+        self._targetGameObject = value
+    
 
-            # handle collisions with the wall and entities
-            # self.enemy_collision_rects()
-            # self.pathing_end_position_target = (48,-48)
-            self.pathing_end_position_target = objectManager.player.hurtbox.center
-
-
-            # determine the pathing the entity is going to be using
-            # self.determine_pathing_type()
-
-            # update pathing and cache
-            self.update_pathing_and_cache()
-            self.draw_pathing()
-
-            # # movement
-            self.move_and_collide()
-
-            # draw surface
-            self.draw_surface(position=self.hurtbox.center)
-            self.draw_rect(position=self.hurtbox.center)
+    

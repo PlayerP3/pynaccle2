@@ -460,3 +460,22 @@ print(z)
 print(x)
 print(y)
 print(ll)
+
+
+v,u = (2,3)
+
+print(v,u)
+
+c = [[1,2],[3,4]]
+
+for b in c:
+    
+    print(b)
+    
+    for a in b:
+        
+        print(a)#
+        
+c = {'d':'ee'}
+
+print(c.items())
