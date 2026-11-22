@@ -20,7 +20,7 @@ class Roaming(State):
 
         # set acceleration to base
         # self.parent_node.acceleration = self.parent_node.original_vars['acceleration']
-        self.parent_node.movement_vectors['movement']['Xcceleration_rate'] = self.parent_node.slide_friction
+        self.parent_node.movement_vectors['movement']['acceleration_rate'] = self.parent_node.slide_friction
 
         # change acceleration_timer
 

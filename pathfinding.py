@@ -411,14 +411,14 @@ class Pathfinding():
 
         pass
 
-    def update_movement_vectors2(self,start_position:tuple,target_position:tuple,target_point=None) -> None:
+    def update_movement_vectors2(self,start_position:tuple,target_position:tuple,target_point_to_stop_at=None) -> None:
 
             # set bullet direction/current angle
             direction_vectorX, direction_vectorY = Vector2(target_position) - Vector2(start_position)
 
             # update movement vector
             self.update_movement_vectors(unique_id='pathing',direction_vectorX=direction_vectorX,direction_vectorY=direction_vectorY,
-                                                        acceleration=self.acceleration,Xcceleration_rate=0,max_value=self.acceleration,target_point=target_point)
+                                                        acceleration=self.acceleration,acceleration_rate=0,max_value=self.acceleration,target_point_to_stop_at=target_point_to_stop_at)
             
             
     def check_obstacle_collision(self):
@@ -510,7 +510,7 @@ class Pathfinding():
                             self.pathing = []
                             self.update_path = False
                             
-                            # self.update_movement_vectors2(start_position=self.pathing_start_pos,target_position=self.pathing[0],target_point=self.pathing[0])
+                            # self.update_movement_vectors2(start_position=self.pathing_start_pos,target_position=self.pathing[0],target_point_to_stop_at=self.pathing[0])
                             
                             return
                 
@@ -544,7 +544,7 @@ class Pathfinding():
                             self.movement_vectors = {}
                             self.pathing = []
                                                         
-                            # self.update_movement_vectors2(start_position=self.pathing_start_pos,target_position=self.pathing[0],target_point=self.pathing[0])
+                            # self.update_movement_vectors2(start_position=self.pathing_start_pos,target_position=self.pathing[0],target_point_to_stop_at=self.pathing[0])
                             return
         
                     # update movement vectors

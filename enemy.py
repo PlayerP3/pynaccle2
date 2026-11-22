@@ -104,8 +104,8 @@ class Enemy(Moveable_Object,Pathfinding,StateMachine):
 
                 # apply a knockback
                 self.update_movement_vectors(unique_id='overlapping_spread_knockback',direction_vectorX=collision_vectorX,direction_vectorY=collision_vectorY,
-                                    acceleration=((game_object.overlap_resolution_strength/self.overlap_resolution_resistance)),Xcceleration_rate=self.decceleration_rate,Xcceleration_rate_change='negative',max_value=0,
-                                    reduce_on_wall_collision=True,reset_on_max_value=True)
+                                    acceleration=((game_object.overlap_resolution_strength/self.overlap_resolution_resistance)),acceleration_rate=self.decceleration_rate,acceleration_rate_change='negative',max_value=0,
+                                    invert_direction_vectors_on_collision=True,delete_on_max_value=True)
 
     # choose position that the enemy targets with its pathfinding
     def set_pathing_end_pos(self,pos:tuple=None):

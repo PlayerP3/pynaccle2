@@ -110,6 +110,7 @@ class AnimatedSprite():
 
         # direction variable in json is [start,stop,increment], then we make the list here in the initialising
         self.direction = starting_direction
+        self._currentAngle = starting_direction
 
         self.animation_count = 0
         self.animation_delay = animation_delay
@@ -381,14 +382,14 @@ class AnimatedSprite():
         # if the class is present but we dont have a sprite for the specific obj
         if self.img_path not in SpriteCache:
 
-            SpriteCache[self.img_path] = {dimensions:{self.direction:self.load_sprite_sheet()}}
+            SpriteCache[self.img_path] = {dimensions:{self.currentAngle:self.load_sprite_sheet()}}
 
         # if the specific obj is there but we dont have a class for that specific rect yet
         if dimensions not in SpriteCache[self.img_path]:
-            SpriteCache[self.img_path][dimensions] = {self.direction:self.load_sprite_sheet()}
+            SpriteCache[self.img_path][dimensions] = {self.currentAngle:self.load_sprite_sheet()}
 
-        if self.direction not in SpriteCache[self.img_path][dimensions]:
-            SpriteCache[self.img_path][dimensions][self.direction] = self.load_sprite_sheet()
+        if self.currentAngle not in SpriteCache[self.img_path][dimensions]:
+            SpriteCache[self.img_path][dimensions][self.currentAngle] = self.load_sprite_sheet()
 
         # elif self.direction in SpriteCache[self.img_path][dimensions]:
 
@@ -411,8 +412,23 @@ class AnimatedSprite():
     def get_hitbox(self):
         pass
 
-    # run dissolve 
+    @property
+    def currentAngle(self):
+        return self._currentAngle
 
+    @currentAngle.setter
+    def currentAngle(self,directionVectorXYA:tuple):
+        
+        # breakdown vectors and angle increment if any
+        directionVectorX,directionVectorY,angleOffset = directionVectorXYA
+        
+        if angleOffset == 0:
+            current_angle = math.atan2(directionVectorY,directionVectorX) # add offset of 45 degrees
+            self._currentAngle = math.floor((math.degrees(current_angle)+90)% 360)
+            
+        elif angleOffset != 0:
+            self._currentAngle += angleOffset
+        
     # shader vars
     def set_shader(self,shader:str='default'):
     
@@ -454,7 +470,7 @@ class AnimatedSprite():
         # self.modelMatrix = glm.translate(self.modelMatrix,glm.vec3(0.5*self.sizeVector.x,0.5*self.sizeVector.y,0))
         
         # rotate, vec3 is axis we want to rotate on
-        self.modelMatrix = glm.rotate(self.modelMatrix,glm.radians(float(-self.direction)),glm.vec3(0,0,1))
+        self.modelMatrix = glm.rotate(self.modelMatrix,glm.radians(float(-self.currentAngle)),glm.vec3(0,0,1))
         
         # self.modelMatrix = glm.translate(self.modelMatrix,glm.vec3(-0.5*self.sizeVector.x,-0.5*self.sizeVector.y,0))
         

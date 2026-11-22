@@ -2,7 +2,7 @@ import pygame,os,re,sys
 from pygame.math import Vector2
 from .raycast import Raycast
 from .animatedsprite import AnimatedSprite
-from .globs import delta,FPS
+from .globs import delta
 from .objectsystem import objectManager
 from .configs import configData
 from .utils import *
@@ -40,7 +40,7 @@ class Moveable_Object(AnimatedSprite):
                  is_target_for_homing:bool=False,damage_resistance:float=1,is_invincible:bool=False,on_shot_effects:dict={},
                  on_damage_taken_effects:dict={},status_effects:dict={},
 
-                 stop_at_target_point:bool=False,can_ricochet:bool=False,score:int=0,score_on_hit:int=0,score_on_kill:int=0,
+                 stop_at_target_point_to_stop_at:bool=False,can_ricochet:bool=False,score:int=0,score_on_hit:int=0,score_on_kill:int=0,
 
                  max_acceleration:float=1,min_acceleration:float=0,invincibility_duration:float=0,
 
@@ -92,7 +92,7 @@ class Moveable_Object(AnimatedSprite):
         self.can_ricochet = can_ricochet
 
         # stop moving when target point is reached
-        self.stop_at_target_point = stop_at_target_point
+        self.stop_at_target_point_to_stop_at = stop_at_target_point_to_stop_at
 
         # set acceleration reduction
         self.acceleration = acceleration
@@ -126,7 +126,7 @@ class Moveable_Object(AnimatedSprite):
         self.damage = damage
         self.damage_multiplier = damage_multiplier
         self.damage_resistance = damage_resistance
-        self.action_every_X_frames = action_every_X_frames/FPS
+        self.action_every_X_frames = action_every_X_frames/configData.loadedConfigs['params']['gameFPS']  # change this because we are not using FPS as globs
         self.critical_chance = critical_chance
         self.critical_multiplier = critical_multiplier
 
@@ -258,9 +258,9 @@ class Moveable_Object(AnimatedSprite):
                     self.direction_vectorX += self.collision_vector[0]
                     self.direction_vectorY += self.collision_vector[1]
 
-                    self.apply_knockback(gameObj=gObj,unique_id='overlapping_spread_knockback',direction_vectorX=self.direction_vectorX,direction_vectorY=self.direction_vectorY,
-                                        acceleration=((gObj.knockback_strength/self.knockback_resistance)),Xcceleration_rate=self.decceleration_rate,Xcceleration_rate_change='negative',max_value=0,
-                                        reduce_on_wall_collision=True,reset_on_max_value=True)
+                    # self.apply_knockback(gameObj=gObj,unique_id='overlapping_spread_knockback',direction_vectorX=self.direction_vectorX,direction_vectorY=self.direction_vectorY,
+                    #                     acceleration=((gObj.knockback_strength/self.knockback_resistance)),acceleration_rate=self.decceleration_rate,acceleration_rate_change='negative',max_value=0,
+                    #                     invert_direction_vectors_on_collision=True,delete_on_max_value=True)
                     # gObj.collision_vector -= (collision_vector/self.collision_vector_reduction)
                     # gObj.direction_vectorX -= self.collision_vector[0]
                     # gObj.direction_vectorY -= self.collision_vector[1]
@@ -289,30 +289,10 @@ class Moveable_Object(AnimatedSprite):
                 # make the acceleration of the other object 1 so it actually moves
                 # acceleration is usually triggered by the apply_knockback function
                 # otherwise it is usually always 0
-                self.apply_knockback(gameObj_collided_with=gameObj,unique_id='overlapping_spread_knockback',direction_vectorX=self.direction_vectorX,direction_vectorY=self.direction_vectorY,
-                                            acceleration=((gameObj.knockback_strength/self.knockback_resistance)),Xcceleration_rate=self.decceleration_rate,Xcceleration_rate_change='negative',max_value=0,
-                                            reduce_on_wall_collision=True,reset_on_max_value=True)
+                # self.apply_knockback(gameObj_collided_with=gameObj,unique_id='overlapping_spread_knockback',direction_vectorX=self.direction_vectorX,direction_vectorY=self.direction_vectorY,
+                #                             acceleration=((gameObj.knockback_strength/self.knockback_resistance)),acceleration_rate=self.decceleration_rate,acceleration_rate_change='negative',max_value=0,
+                #                             invert_direction_vectors_on_collision=True,delete_on_max_value=True)
 
-
-    # function that resets movement variables like acceleration upon collision
-    def apply_knockback(self,unique_id:str,direction_vectorX:float,direction_vectorY:float,acceleration:float,Xcceleration_rate:float,
-                         Xcceleration_rate_change:str,max_value:float,reduce_on_wall_collision:bool,reset_on_max_value:bool):
-
-        self.update_movement_vectors(unique_id=unique_id,direction_vectorX=direction_vectorX,direction_vectorY=direction_vectorY,acceleration=acceleration,
-                                        Xcceleration_rate=Xcceleration_rate,Xcceleration_rate_change=Xcceleration_rate_change,max_value=max_value,
-                                        reduce_on_wall_collision=reduce_on_wall_collision,reset_on_max_value=reset_on_max_value)
-
-
-
-    # apply deceleration after the dash
-    def apply_decceleration(self):
-
-        self.acceleration -= (delta * self.decceleration_rate)
-
-        if self.acceleration < 0:
-            self.acceleration = max(self.acceleration,0)
-            self.direction_vectorX = 0
-            self.direction_vectorY = 0
 
     def load_hitboxes(self):
 
@@ -352,21 +332,11 @@ class Moveable_Object(AnimatedSprite):
 
         return collision,hitbox
         
-
-
     # kill object
     def kill(self,active_pool:list,inactive_pool:list):
 
         active_pool.remove(self)
         inactive_pool.append(self)
-        
-   
-
-    # what to do on death
-    # def on_death(self):
-
-    #     if self.health <= 0:
-    #         self.is_active = False
 
     # self explanitory
     def update_position(self):
@@ -419,16 +389,12 @@ class Moveable_Object(AnimatedSprite):
                 if self not in objectManager.object_positions[self.current_tile_position]:
                     objectManager.object_positions[self.current_tile_position].append(self) 
 
-            
-    # spawn function
-    def spawn(self,pos:tuple,vertice:str="center"):
-
-        self.is_active = True
-        
+    # move/teleport function
+    def move_to(self,pos:tuple,vertice:str="center"):
 
         if vertice == "center":
             self.hurtbox.center = (pos[0]+self.spawnOffsetX,pos[1]-self.spawnOffsetY)
-
+        
         elif vertice == "topleft":
             
             posAdjustemntX = 0
@@ -455,146 +421,14 @@ class Moveable_Object(AnimatedSprite):
                 posAdjustemntY = (self.hurtbox.size[1]/2 - configData.loadedConfigs['params']['tileSize']/2) * -1
             
             self.hurtbox.topleft = (pos[0]+self.spawnOffsetX-posAdjustemntX,pos[1]+self.spawnOffsetY-posAdjustemntY)
+            
+    # spawn function
+    def spawn(self,pos:tuple,vertice:str="center"):
 
-    # move function
-    def move_to(self,pos:tuple,vertex:str="center"):
-
-        if vertex == "center":
-            self.hurtbox.center = pos
-
-        elif vertex == "topleft":
-            self.hurtbox.topleft = pos
-
-
-    # # finding direction vector function, when you have a specific point
-    # def find_direction_vector(self,point:tuple):
-
-    #     # now find the x and y vel to the boss
-    #     self.direction_vectorX,self.direction_vectorY = Vector2(point) - Vector2(self.hurtbox.center)
-
-    # # finding direction vector function, takes the actual vector for X and Y
-    # def find_direction_vector2(self,direction_vectorX:float,direction_vectorY):
-
-    #     # set x and y velocity
-    #     self.direction_vectorX,self.direction_vectorY = direction_vectorX,direction_vectorY
-
-    def find_direction_vector(self,pos:tuple) -> tuple:
-
-        return Vector2(pos) - Vector2(self.hurtbox.center)
-    
-    # function to determine movement
-    def determine_movement(self,target:tuple,start:tuple):
-
-        if self.movement_type == 'normal':
+        self.is_active = True
         
-            # set bullet direction/current angle
-            direction_vectorX, direction_vectorY = Vector2(target) - Vector2(start)
-
-            # update movement vector
-            self.update_movement_vectors(unique_id='movement',direction_vectorX=direction_vectorX,direction_vectorY=direction_vectorY,
-                                                        acceleration=self.acceleration,Xcceleration_rate=0,max_value=self.acceleration)
-            
-            # find current angle
-            current_angle = math.atan2(direction_vectorY,direction_vectorX) 
-            
-            self.direction = math.floor((math.degrees(current_angle)+90)% 360) # add offset of 90 degrees offset
+        self.move_to(pos=pos,vertice=vertice)
     
-        elif self.movement_type == 'sine':
-
-            # run timer
-            self.run_timer()
-
-            # set bullet direction/current angle
-            direction_vectorX, direction_vectorY = Vector2(target) - Vector2(start)
-
-            # update movement vector
-            self.update_movement_vectors(unique_id='movement',direction_vectorX=direction_vectorX,direction_vectorY=direction_vectorY,
-                                                        acceleration=self.acceleration,Xcceleration_rate=0,max_value=self.acceleration)
-        
-            # set bullet direction/current angle
-            direction_vectorX, direction_vectorY = Vector2(target) - Vector2(start)
-
-            cross_direction_vectorX,cross_direction_vectorY = Vector2(-direction_vectorY,direction_vectorX)
-
-            finalvecx = (math.sin(self.elapsed_time)* cross_direction_vectorX)
-            finalvecy = (math.sin(self.elapsed_time)* cross_direction_vectorY)
-            direction_vectorX = 0
-
-            # map to 360 to get proper sine movement that goes to 1 and -1
-            pointas = -math.sin(self.elapsed_time) * self.sine_movement_amplitude  
-
-            # update movement vector
-
-            direction_vectorX, direction_vectorY = Vector2((0,pointas)) - Vector2(self.hurtbox.center)
-
-            direction_vectorY = pointas
-            direction_vectorX = 1
-
-            self.update_movement_vectors(unique_id='sine',direction_vectorX=finalvecx,direction_vectorY=finalvecy,
-                                                        acceleration=self.acceleration,Xcceleration_rate=0,max_value=self.acceleration)
-
-            # find current angle
-            current_angle = math.atan2(direction_vectorY,direction_vectorX) 
-            
-            self.direction = math.floor((math.degrees(current_angle)+90)% 360) # add offset of 90 degrees offset
-    
-    # function to update movement
-    def update_movement(self):
-
-        if self.movement_type == 'sine':
-
-           # set bullet direction/current angle
-            direction_vectorX, direction_vectorY = self.movement_vectors['movement']['direction_vectorX'],self.movement_vectors['movement']['direction_vectorY']
-            cross_direction_vectorX,cross_direction_vectorY = Vector2(-direction_vectorY,direction_vectorX)
-
-            finalvecx = (math.sin(self.elapsed_time)* cross_direction_vectorX)
-            finalvecy = (math.sin(self.elapsed_time)* cross_direction_vectorY)
-            direction_vectorX = 0
-
-            # map to 360 to get proper sine movement that goes to 1 and -1
-            pointas = -math.sin(self.elapsed_time) * self.sine_movement_amplitude  
-
-            # update movement vector
-
-            direction_vectorX, direction_vectorY = Vector2((0,pointas)) - Vector2(self.hurtbox.center)
-
-            direction_vectorY = pointas
-            direction_vectorX = 1
-
-            self.update_movement_vectors(unique_id='sine',direction_vectorX=finalvecx,direction_vectorY=finalvecy,
-                                                        acceleration=self.acceleration,Xcceleration_rate=0,max_value=self.acceleration)
-
-            # find current angle
-            current_angle = math.atan2(direction_vectorY,direction_vectorX) 
-            
-            self.direction = math.floor((math.degrees(current_angle)+90)% 360) # add offset of 90 degrees offset
-            
- 
-    
-    # directly set a value for direction vector
-    def set_direction_vector(self,direction_vectorX:float,direction_vectorY:float) -> None:
-
-        self.direction_vectorX = direction_vectorX
-        self.direction_vectorY = direction_vectorY
-  
-    # update movement vectors array, use whenever setting both the direction vectors and acceleration
-    # concept of unique id is that a single object can only apply a single vector to the moveable object
-    def update_movement_vectors(self,unique_id:int,direction_vectorX:float,direction_vectorY:float,acceleration:float=1,
-                                Xcceleration_rate:float=delta,Xcceleration_rate_change:str='positive',max_value:float=1,reduce_on_wall_collision:bool=False,
-                                wall_collisionX:bool=False,wall_collisionY:bool=False,reset_on_max_value:bool=False,target_point:tuple = None) -> None:
-
-        self.movement_vectors.update({unique_id:{"direction_vectorX":direction_vectorX,
-                                      "direction_vectorY":direction_vectorY,
-                                      "acceleration":acceleration,
-                                      "Xcceleration_rate":Xcceleration_rate,
-                                      "Xcceleration_rate_change":Xcceleration_rate_change,
-                                      "max_value":max_value,"reduce_on_wall_collision":reduce_on_wall_collision,
-                                      "reset_on_max_value":reset_on_max_value,
-                                      "target_point":target_point,
-                                      "wall_collisionX":wall_collisionX,
-                                      "wall_collisionY":wall_collisionY}})
-
-
     # find surrounding tiles
     def find_surrounding_tiles(self,pos:tuple,tile_width:int=32,tile_height:int=32) -> list:
 
@@ -625,266 +459,6 @@ class Moveable_Object(AnimatedSprite):
 
         return all_neighbours
     
-    def move2(self):
-
-        # store position before movement
-        position_before_movement = self.hurtbox.center
-        target_point = None
-
-        # set final movement var
-        self.movement = Vector2(0,0)
-
-        # get surrounding rects
-        self.surrounding_rects = self.find_surrounding_tiles(pos=self.current_tile_position)
-
-        # collision with objects
-        # self.spread_overlapping_game_objects()
-
-        # var of movements to delete
-
-        # print(f'Before: {len(self.movement_vectors)}')
-        # vectors to delete
-        vectors_to_delete = []
-        wallcollisionX = False
-        wallcollisionY = False
-
-        # if x direction vector is positive or negative return acceleration for that vector
-        positiveXaccel = []
-        negativeXaccel = []
-
-        # for Y
-        positiveYaccel = []
-        negativeYaccel = []
-
-        # all vectors that will be reduced on wall collision
-        wall_colliding_vectors = []
-
-        # loop through dictionary of vectors
-        for unique_id,movement_info in self.movement_vectors.items():
-
-            # print(unique_id)
-
-            # extract unqiue id and movement info
-            # unique_id,movement_info = list(vectors.items())[0]
-
-            # # get index
-            # index = self.movement_vectors.index(movement_info)
-
-            # set movement vars
-            movementx = Vector2(0,0)
-            movementy = Vector2(0,0)
-
-            # unpack all variables
-            direction_vectorX = movement_info["direction_vectorX"]
-            direction_vectorY = movement_info["direction_vectorY"]
-            acceleration = movement_info["acceleration"]
-            Xcceleration_rate = movement_info["Xcceleration_rate"]
-            Xcceleration_rate_change = movement_info["Xcceleration_rate_change"]
-            max_value = movement_info["max_value"]
-            reduce_on_wall_collision = movement_info["reduce_on_wall_collision"]
-            reset_on_max_value = movement_info["reset_on_max_value"]
-            target_point = movement_info["target_point"]
-
-            # wall collision acceleration code
-            if reduce_on_wall_collision:
-                wall_colliding_vectors.append(unique_id)
-            # Actual movement function
-
-             # if only xvel or yvel is changed then set the other axis movement to be 0 because we want to move left, then check for a collision, and then move right and do the same
-            if direction_vectorX !=0:
-                movementx = (Vector2(direction_vectorX,0).normalize()*delta*self.speed*acceleration)
-
-            if direction_vectorY !=0:
-                movementy = (Vector2(0,direction_vectorY).normalize()*delta*self.speed*acceleration)
-
-            # if both x and y are pressed, normalise the x and y values the player is going to move in.
-            # when both x and y are pressed, the normalised value is different from if only one of those was pressed
-            if direction_vectorX != 0 and direction_vectorY != 0:
-
-                move = Vector2(direction_vectorX,direction_vectorY).normalize()*delta*self.speed*acceleration
-
-                # separate into only x movement and only y movement
-                movementx = (move[0],0)
-                movementy = (0,move[1])
-
-            # adjust acceleration
-            if Xcceleration_rate_change == 'positive':
-
-                acceleration += (delta*Xcceleration_rate)
-
-                # update dictionary
-                movement_info["acceleration"] = acceleration
-
-                if acceleration >= max_value:
-
-                    # set to delete
-                    if reset_on_max_value:
-                        vectors_to_delete.append(unique_id)
-
-                        if unique_id in wall_colliding_vectors:
-                            wall_colliding_vectors.remove(unique_id)
-
-                    elif not reset_on_max_value:
-                        movement_info["acceleration"] = max_value
-
-
-            elif Xcceleration_rate_change == 'negative':
-
-                acceleration -= (delta*Xcceleration_rate)
-
-                # update dictionary
-                movement_info["acceleration"] = acceleration
-
-                if acceleration <= max_value:
-
-                    # set to delete
-                    if reset_on_max_value:
-                        vectors_to_delete.append(unique_id)
-
-                        if unique_id in wall_colliding_vectors:
-                            wall_colliding_vectors.remove(unique_id)
-
-                    elif not reset_on_max_value:
-                        movement_info["acceleration"] = max_value
-
-            # add to final movement
-            self.movement += movementx
-            self.movement += movementy
-
-
-            ### handling wall collision acceleration changes
-
-            if not reduce_on_wall_collision:
-
-                # adding accelerations to appropriate lists
-                if direction_vectorX > 0:
-                    positiveXaccel.append(acceleration)
-
-                if direction_vectorX < 0:
-                    negativeXaccel.append(acceleration)
-
-                if direction_vectorY > 0:
-                    positiveYaccel.append(acceleration)
-
-                if direction_vectorY < 0:
-                    negativeYaccel.append(acceleration)
-
-            #######
-        ######################################
-
-
-        #########
-        # delete vectors that are complete
-        if vectors_to_delete:
-            for vector in vectors_to_delete:
-                del self.movement_vectors[vector]
-
-        #########
-        # Actually moving the object
-
-        # at end of function remove everything with 0 acceleration from the list
-        # self.hurtbox.center = (self.hurtbox.center[0] + self.movement[0], self.hurtbox.center[1] + 0)
-
-        # # move along y axis only
-        # self.hurtbox.center = (self.hurtbox.center[0] + 0, self.hurtbox.center[1] + self.movement[1])
-  
-        self.hurtbox.centerx += self.movement[0]
-        self.hurtbox.centery += self.movement[1]
-
-        # stop reducing acceleration multiple times
-        acceleration_reduced = False
-
-        # go through all vectors
-        for vec in wall_colliding_vectors:
-
-            if wallcollisionX:
-                self.movement_vectors[vec]["direction_vectorX"] *= -1
-
-                # if negative
-                if self.movement_vectors[vec]["direction_vectorX"] < 0:
-
-                    # subtract accelerations belonging to all negative vectors
-
-                    # if not acceleration_reduced:
-                    self.movement_vectors[vec]["acceleration"] -= sum(negativeXaccel)/5
-                    acceleration_reduced = True
-
-                    # # stop acceleration going beyond its max value
-                    if self.movement_vectors[vec]["max_value"] <= 0:
-                        self.movement_vectors[vec]["acceleration"] = max(self.movement_vectors[vec]["acceleration"],self.movement_vectors[vec]["max_value"])
-
-                    if self.movement_vectors[vec]["max_value"] > 0:
-                        self.movement_vectors[vec]["acceleration"] = min(self.movement_vectors[vec]["acceleration"],self.movement_vectors[vec]["max_value"])
-
-                # if positive
-                elif self.movement_vectors[vec]["direction_vectorX"] > 0:
-
-
-                    # if not acceleration_reduced:
-                        # subtract accelerations belonging to all negative vectors
-                    self.movement_vectors[vec]["acceleration"] -= sum(positiveXaccel)/5
-                    acceleration_reduced = True
-
-                    # # stop acceleration going beyond its max value
-                    if self.movement_vectors[vec]["max_value"] <= 0:
-                        self.movement_vectors[vec]["acceleration"] = max(self.movement_vectors[vec]["acceleration"],self.movement_vectors[vec]["max_value"])
-
-                    if self.movement_vectors[vec]["max_value"] > 0:
-                        self.movement_vectors[vec]["acceleration"] = min(self.movement_vectors[vec]["acceleration"],self.movement_vectors[vec]["max_value"])
-
-                # if positive
-            if wallcollisionY:
-                self.movement_vectors[vec]["direction_vectorY"] *= -1
-
-
-                # if negative
-                if self.movement_vectors[vec]["direction_vectorY"] < 0:
-
-                    # if not acceleration_reduced:
-                        # subtract accelerations belonging to all negative vectors
-                    self.movement_vectors[vec]["acceleration"] -= sum(negativeYaccel)/5
-                    acceleration_reduced = True
-
-                    # stop acceleration going beyond its max value
-                    if self.movement_vectors[vec]["max_value"] <= 0:
-                        self.movement_vectors[vec]["acceleration"] = max(self.movement_vectors[vec]["acceleration"],self.movement_vectors[vec]["max_value"])
-
-                    if self.movement_vectors[vec]["max_value"] > 0:
-                        self.movement_vectors[vec]["acceleration"] = min(self.movement_vectors[vec]["acceleration"],self.movement_vectors[vec]["max_value"])
-
-                # if positive
-                elif self.movement_vectors[vec]["direction_vectorY"] > 0:
-
-                    # if not acceleration_reduced:
-                        # subtract accelerations belonging to all negative vectors
-                    self.movement_vectors[vec]["acceleration"] -= sum(positiveYaccel)/5
-                    acceleration_reduced = True
-
-                    # stop acceleration going beyond its max value
-                    if self.movement_vectors[vec]["max_value"] <= 0:
-                        self.movement_vectors[vec]["acceleration"] = max(self.movement_vectors[vec]["acceleration"],self.movement_vectors[vec]["max_value"])
-
-                    if self.movement_vectors[vec]["max_value"] > 0:
-                        self.movement_vectors[vec]["acceleration"] = min(self.movement_vectors[vec]["acceleration"],self.movement_vectors[vec]["max_value"])
-
-
-            # if wallcollisionX or wallcollisionY:
-            #     self.movement_vectors[vec]["direction_vectorX"],self.movement_vectors[vec]["direction_vectorY"] = Creative_Mode.project_vector(Vector2(2,2),Vector2(self.movement_vectors[vec]["direction_vectorX"],self.movement_vectors[vec]["direction_vectorY"]))
-        # print(f'Acc after collision = {self.movement_vectors}\n')
-        # apply decceleration
-        # self.apply_decceleration()
-
-        # handle overshooting
-        if target_point:
-
-            if find_dist_between_points(target_point,position_before_movement) < find_dist_between_points(self.hurtbox.center,position_before_movement):
-
-                self.hurtbox.center = target_point
-
-        # # reset vectors
-        self.direction_vectorX = 0
-        self.direction_vectorY = 0
-        self.collision_vector = Vector2(0,0)
 
     # find closest interactable to the moveable object
     def find_closest_interactable(self):
@@ -924,8 +498,8 @@ class Moveable_Object(AnimatedSprite):
         self.find_surrounding_game_objects()  
 
         # separate self objects from different objects
-        self_origin_surrounding_objects  = [x for x in self.surrounding_game_objects if x.object_of_origin == self.object_of_origin]  
-        different_origin_surrounding_objets = [x for x in self.surrounding_game_objects if x.object_of_origin != self.object_of_origin]  
+        # self_origin_surrounding_objects  = [x for x in self.surrounding_game_objects if x.object_of_origin == self.object_of_origin]  
+        # different_origin_surrounding_objets = [x for x in self.surrounding_game_objects if x.object_of_origin != self.object_of_origin]  
 
         # identify closest interactable to object
         self.find_closest_interactable()
@@ -992,15 +566,30 @@ class Moveable_Object(AnimatedSprite):
                         self.hurtbox.bottom = game_object.hurtbox.top
 
                 # self.is_active = False
+        
+    # update movement vectors array, use whenever setting both the direction vectors and acceleration
+    # concept of unique id is that a single object can only apply a single vector to the moveable object
+    def update_movement_vectors(self,unique_id:int,direction_vectorX:float,direction_vectorY:float,acceleration:float=1,
+                                acceleration_rate:float=1,acceleration_rate_change:str='positive',max_value:float=1,invert_direction_vectors_on_collision:bool=False,
+                                inversion_collisionX:bool=False,inversion_collisionY:bool=False,delete_on_max_value:bool=False,target_point_to_stop_at:tuple = None) -> None:
 
-                
+        self.movement_vectors.update({unique_id:{"direction_vectorX":direction_vectorX,
+                                        "direction_vectorY":direction_vectorY,
+                                        "acceleration":acceleration,
+                                        "acceleration_rate":acceleration_rate,
+                                        "acceleration_rate_change":acceleration_rate_change,
+                                        "max_value":max_value,"invert_direction_vectors_on_collision":invert_direction_vectors_on_collision,
+                                        "delete_on_max_value":delete_on_max_value,
+                                        "target_point_to_stop_at":target_point_to_stop_at,
+                                        "inversion_collisionX":inversion_collisionX,
+                                        "inversion_collisionY":inversion_collisionY}})
 
     # function for both movement and collisions
     def move_and_collide(self):
         
         # store position before movement
         position_before_movement = self.hurtbox.center
-        target_point = None
+        target_point_to_stop_at = None
 
         # set final movement var
         self.movement = Vector2(0,0)
@@ -1013,7 +602,6 @@ class Moveable_Object(AnimatedSprite):
 
         # var of movements to delete
 
-        # print(f'Before: {len(self.movement_vectors)}')
         # vectors to delete
         vectors_to_delete = []
 
@@ -1025,20 +613,11 @@ class Moveable_Object(AnimatedSprite):
         positiveYaccel = []
         negativeYaccel = []
 
-        # all vectors that will be reduced on wall collision
-        wall_colliding_vectors = []
+        # all vectors that will be inverted upon collision with some obj
+        movement_vectors_to_invert = []
 
         # loop through dictionary of vectors
         for unique_id,movement_info in self.movement_vectors.items():
-
-            # print(unique_id)
-  
-
-            # extract unqiue id and movement info
-            # unique_id,movement_info = list(vectors.items())[0]
-
-            # # get index
-            # index = self.movement_vectors.index(movement_info)
 
             # set movement vars
             movementx = Vector2(0,0)
@@ -1048,44 +627,44 @@ class Moveable_Object(AnimatedSprite):
             direction_vectorX = movement_info["direction_vectorX"]
             direction_vectorY = movement_info["direction_vectorY"]
             acceleration = movement_info["acceleration"]
-            Xcceleration_rate = movement_info["Xcceleration_rate"]
-            Xcceleration_rate_change = movement_info["Xcceleration_rate_change"]
+            acceleration_rate = movement_info["acceleration_rate"]
+            acceleration_rate_change = movement_info["acceleration_rate_change"]
             max_value = movement_info["max_value"]
-            reduce_on_wall_collision = movement_info["reduce_on_wall_collision"]
-            reset_on_max_value = movement_info["reset_on_max_value"]
-            wallcollisionX = movement_info["wall_collisionX"]
-            wallcollisionY = movement_info["wall_collisionY"]
-            target_point = movement_info["target_point"]
+            delete_on_max_value = movement_info["delete_on_max_value"]
+            invert_direction_vectors_on_collision = movement_info["invert_direction_vectors_on_collision"]
+            inversionCollisionX = movement_info["inversion_collisionX"]
+            inversionCollisionY = movement_info["inversion_collisionY"]
+            target_point_to_stop_at = movement_info["target_point_to_stop_at"]
 
             # wall collision acceleration code
-            # if reduce_on_wall_collision:
-            #     wall_colliding_vectors.append(unique_id)
+            # if invert_direction_vectors_on_collision:
+            #     movement_vectors_to_invert.append(unique_id)
                 
-            if wallcollisionX or wallcollisionY:
-                wall_colliding_vectors.append(unique_id)
+            if inversionCollisionX or inversionCollisionY:
+                movement_vectors_to_invert.append(unique_id)
             # Actual movement function
 
              # if only xvel or yvel is changed then set the other axis movement to be 0 because we want to move left, then check for a collision, and then move right and do the same
             if direction_vectorX !=0:
-                movementx = (Vector2(direction_vectorX,0).normalize()*delta*self.speed*acceleration)
+                movementx = (Vector2(direction_vectorX,0).normalize()*configData.loadedConfigs['params']['gameDelta']*self.speed*acceleration)
 
             if direction_vectorY !=0:
-                movementy = (Vector2(0,direction_vectorY).normalize()*delta*self.speed*acceleration)
+                movementy = (Vector2(0,direction_vectorY).normalize()*configData.loadedConfigs['params']['gameDelta']*self.speed*acceleration)
 
             # if both x and y are pressed, normalise the x and y values the player is going to move in.
             # when both x and y are pressed, the normalised value is different from if only one of those was pressed
             if direction_vectorX != 0 and direction_vectorY != 0:
 
-                move = Vector2(direction_vectorX,direction_vectorY).normalize()*delta*self.speed*acceleration
+                move = Vector2(direction_vectorX,direction_vectorY).normalize()*configData.loadedConfigs['params']['gameDelta']*self.speed*acceleration
 
                 # separate into only x movement and only y movement
                 movementx = (move[0],0)
                 movementy = (0,move[1])
 
             # adjust acceleration
-            if Xcceleration_rate_change == 'positive':
+            if acceleration_rate_change == 'positive':
 
-                acceleration += (delta*Xcceleration_rate)
+                acceleration += (configData.loadedConfigs['params']['gameDelta']*acceleration_rate)
 
                 # update dictionary
                 movement_info["acceleration"] = acceleration
@@ -1093,19 +672,19 @@ class Moveable_Object(AnimatedSprite):
                 if acceleration >= max_value:
 
                     # set to delete
-                    if reset_on_max_value:
+                    if delete_on_max_value:
                         vectors_to_delete.append(unique_id)
 
-                        if unique_id in wall_colliding_vectors:
-                            wall_colliding_vectors.remove(unique_id)
+                        if unique_id in movement_vectors_to_invert:
+                            movement_vectors_to_invert.remove(unique_id)
 
-                    elif not reset_on_max_value:
+                    elif not delete_on_max_value:
                         movement_info["acceleration"] = max_value
 
 
-            elif Xcceleration_rate_change == 'negative':
+            elif acceleration_rate_change == 'negative':
 
-                acceleration -= (delta*Xcceleration_rate)
+                acceleration -= (configData.loadedConfigs['params']['gameDelta']*acceleration_rate)
 
                 # update dictionary
                 movement_info["acceleration"] = acceleration
@@ -1113,13 +692,13 @@ class Moveable_Object(AnimatedSprite):
                 if acceleration <= max_value:
 
                     # set to delete
-                    if reset_on_max_value:
+                    if delete_on_max_value:
                         vectors_to_delete.append(unique_id)
 
-                        if unique_id in wall_colliding_vectors:
-                            wall_colliding_vectors.remove(unique_id)
+                        if unique_id in movement_vectors_to_invert:
+                            movement_vectors_to_invert.remove(unique_id)
 
-                    elif not reset_on_max_value:
+                    elif not delete_on_max_value:
                         movement_info["acceleration"] = max_value
 
             # add to final movement
@@ -1128,7 +707,7 @@ class Moveable_Object(AnimatedSprite):
 
 
             ### handling wall collision acceleration changes
-            if not reduce_on_wall_collision:
+            if not invert_direction_vectors_on_collision:
 
                 # adding accelerations to appropriate lists
                 if direction_vectorX > 0:
@@ -1143,7 +722,6 @@ class Moveable_Object(AnimatedSprite):
                 if direction_vectorY < 0:
                     negativeYaccel.append(acceleration)
 
-            #######
         ######################################
 
 
@@ -1166,19 +744,16 @@ class Moveable_Object(AnimatedSprite):
         acceleration_reduced = False
 
         # go through all vectors
-        for vec in wall_colliding_vectors:
+        for vec in movement_vectors_to_invert:
 
-            if wallcollisionX:
+            if inversionCollisionX:
                 self.movement_vectors[vec]["direction_vectorX"] *= -1
 
                 # if negative
                 if self.movement_vectors[vec]["direction_vectorX"] < 0:
 
                     # subtract accelerations belonging to all negative vectors
-
-                    # if not acceleration_reduced:
                     self.movement_vectors[vec]["acceleration"] -= sum(negativeXaccel)/5
-                    acceleration_reduced = True
 
                     # # stop acceleration going beyond its max value
                     if self.movement_vectors[vec]["max_value"] <= 0:
@@ -1190,11 +765,9 @@ class Moveable_Object(AnimatedSprite):
                 # if positive
                 elif self.movement_vectors[vec]["direction_vectorX"] > 0:
 
-
                     # if not acceleration_reduced:
-                        # subtract accelerations belonging to all negative vectors
+                    # subtract accelerations belonging to all negative vectors
                     self.movement_vectors[vec]["acceleration"] -= sum(positiveXaccel)/5
-                    acceleration_reduced = True
 
                     # # stop acceleration going beyond its max value
                     if self.movement_vectors[vec]["max_value"] <= 0:
@@ -1204,10 +777,10 @@ class Moveable_Object(AnimatedSprite):
                         self.movement_vectors[vec]["acceleration"] = min(self.movement_vectors[vec]["acceleration"],self.movement_vectors[vec]["max_value"])
 
                 # reset wall colision var
-                self.movement_vectors[vec]['wall_collisionX'] = False
+                self.movement_vectors[vec]['inversion_collisionX'] = False
                 
                 # if positive
-            if wallcollisionY:
+            if inversionCollisionY:
                 self.movement_vectors[vec]["direction_vectorY"] *= -1
 
 
@@ -1217,7 +790,6 @@ class Moveable_Object(AnimatedSprite):
                     # if not acceleration_reduced:
                         # subtract accelerations belonging to all negative vectors
                     self.movement_vectors[vec]["acceleration"] -= sum(negativeYaccel)/5
-                    acceleration_reduced = True
 
                     # stop acceleration going beyond its max value
                     if self.movement_vectors[vec]["max_value"] <= 0:
@@ -1230,9 +802,8 @@ class Moveable_Object(AnimatedSprite):
                 elif self.movement_vectors[vec]["direction_vectorY"] > 0:
 
                     # if not acceleration_reduced:
-                        # subtract accelerations belonging to all negative vectors
+                    # subtract accelerations belonging to all negative vectors
                     self.movement_vectors[vec]["acceleration"] -= sum(positiveYaccel)/5
-                    acceleration_reduced = True
 
                     # stop acceleration going beyond its max value
                     if self.movement_vectors[vec]["max_value"] <= 0:
@@ -1242,56 +813,13 @@ class Moveable_Object(AnimatedSprite):
                         self.movement_vectors[vec]["acceleration"] = min(self.movement_vectors[vec]["acceleration"],self.movement_vectors[vec]["max_value"])
 
                 # reset wall collision var
-                self.movement_vectors[vec]['wall_collisionY'] = False
-                
-            # get new direction
-            # find current angle
-            current_angle = math.atan2(self.movement_vectors[vec]["direction_vectorY"],self.movement_vectors[vec]["direction_vectorX"]) 
-            self.direction = math.floor((math.degrees(current_angle)+90)% 360)
-                
-            # if wallcollisionX or wallcollisionY:
-            #     self.movement_vectors[vec]["direction_vectorX"],self.movement_vectors[vec]["direction_vectorY"] = Creative_Mode.project_vector(Vector2(2,2),Vector2(self.movement_vectors[vec]["direction_vectorX"],self.movement_vectors[vec]["direction_vectorY"]))
-        # print(f'Acc after collision = {self.movement_vectors}\n')
-        # apply decceleration
-        # self.apply_decceleration()
-        
-        
-
-        # handle overshooting
-        if target_point:
-            
-
-            if  ((Vector2(target_point) - Vector2(position_before_movement)).length() <= (Vector2(self.hurtbox.center) - Vector2(position_before_movement)).length()):
-                
-                self.hurtbox.center = target_point
-                
-                # # move to next point in pathing
-                # if self.pathing:
+                self.movement_vectors[vec]['inversion_collisionY'] = False
                             
-                #     # if the pathing is longer than 1 then delete path and move on
-                #     if len(self.pathing) > 1:
-                #         del self.pathing[0]
-                        
-                #     # set target to be the next thing in the pathing
-                #     self.target_position = self.pathing[0]
-                    
-                #     # if current tile position is the end tile, then stop movement because we have arrived at our goal
-                #     if self.current_tile_position == self.pathing_gameObj_tile_pos:
-                #         self.movement_vectors = {}
-                #         self.pathing = []
-                    
-                #     else:
-
-                #         # update movement towards next point in path
-                #         self.update_movement_vectors2(start_position=self.hurtbox.center,target_position=self.pathing[0])
+        # handle if we have a target point to move towards
+        if target_point_to_stop_at:
+            if find_dist_between_points(target_point_to_stop_at,position_before_movement) <= find_dist_between_points(self.hurtbox.center,position_before_movement):
+                self.hurtbox.center = target_point_to_stop_at
                 
-                #     print(self.pathing,'real time')
-                #     print(self.pathing_gameObj_hurtbox_pos)
-                #     print(self.pathing_gameObj_tile_pos)
-                                                
-                # else:
-                #     self.hurtbox.center = target_point
-
         # # reset vectors
         self.direction_vectorX = 0
         self.direction_vectorY = 0
@@ -1311,16 +839,16 @@ class Moveable_Object(AnimatedSprite):
             direction_vectorX,direction_vectorY = Vector2(random_point) - Vector2(self.hurtbox.center)
 
             self.update_movement_vectors(unique_id='movement',direction_vectorX=direction_vectorX,
-                                            direction_vectorY=direction_vectorY,acceleration=self.acceleration,Xcceleration_rate=0,
-                                            Xcceleration_rate_change='negative',
-                                            max_value=self.acceleration,reduce_on_wall_collision=False,reset_on_max_value=False,
-                                            target_point=random_point)
+                                            direction_vectorY=direction_vectorY,acceleration=self.acceleration,acceleration_rate=0,
+                                            acceleration_rate_change='negative',
+                                            max_value=self.acceleration,invert_direction_vectors_on_collision=False,delete_on_max_value=False,
+                                            target_point_to_stop_at=random_point)
 
         elif 'movement' in self.movement_vectors:
 
 
             # if we have arrived at the point then change the vector
-            if self.hurtbox.center == self.movement_vectors['movement']['target_point']:
+            if self.hurtbox.center == self.movement_vectors['movement']['target_point_to_stop_at']:
 
                 # sample random point from a circle
                 # random_point = Creative_Mode.random_sample_circle2(radius=200,circle_center=self.hurtbox.center)
@@ -1328,10 +856,10 @@ class Moveable_Object(AnimatedSprite):
                 direction_vectorX,direction_vectorY = Vector2(random_point) - Vector2(self.hurtbox.center)
 
                 self.update_movement_vectors(unique_id='movement',direction_vectorX=direction_vectorX,
-                                            direction_vectorY=direction_vectorY,acceleration=self.acceleration,Xcceleration_rate=0,
-                                            Xcceleration_rate_change='negative',
-                                            max_value=self.acceleration,reduce_on_wall_collision=False,reset_on_max_value=False,
-                                            target_point=random_point)
+                                            direction_vectorY=direction_vectorY,acceleration=self.acceleration,acceleration_rate=0,
+                                            acceleration_rate_change='negative',
+                                            max_value=self.acceleration,invert_direction_vectors_on_collision=False,delete_on_max_value=False,
+                                            target_point_to_stop_at=random_point)
 
             # implement a random chance that
             else:
@@ -1342,26 +870,13 @@ class Moveable_Object(AnimatedSprite):
                     direction_vectorX,direction_vectorY = Vector2(random_point) - Vector2(self.hurtbox.center)
 
                     self.update_movement_vectors(unique_id='movement',direction_vectorX=direction_vectorX,
-                                                direction_vectorY=direction_vectorY,acceleration=self.acceleration,Xcceleration_rate=0,
-                                                Xcceleration_rate_change='negative',
-                                                max_value=self.acceleration,reduce_on_wall_collision=False,reset_on_max_value=False,
-                                                target_point=random_point)
+                                                direction_vectorY=direction_vectorY,acceleration=self.acceleration,acceleration_rate=0,
+                                                acceleration_rate_change='negative',
+                                                max_value=self.acceleration,invert_direction_vectors_on_collision=False,delete_on_max_value=False,
+                                                target_point_to_stop_at=random_point)
 
 
         self.move2()
-
-    # function deplete/increase stamina
-    def update_stamina(self):
-
-        if self.state.__class__.__name__ != 'Running':
-
-            self.stamina += delta/2
-
-        if self.state.__class__.__name__ == 'Running':
-
-            self.stamina -= delta
-            
-        self.stamina = np.clip(self.stamina,0,self.original_vars['stamina'])
 
     # find surrounding game objectts
     def find_surrounding_game_objects(self):
@@ -1414,9 +929,9 @@ class Moveable_Object(AnimatedSprite):
         #     dmgnum.init(f"{damage}")
         #     dmgnum.spawn(gameobj.hurtbox.center)
         #     dmgnum.update_movement_vectors(unique_id='movement',direction_vectorX=0,
-        #                                     direction_vectorY=-1,acceleration=self.acceleration,Xcceleration_rate=0,
-        #                                     Xcceleration_rate_change='negative',
-        #                                     max_value=self.acceleration,reduce_on_wall_collision=False,reset_on_max_value=False)
+        #                                     direction_vectorY=-1,acceleration=self.acceleration,acceleration_rate=0,
+        #                                     acceleration_rate_change='negative',
+        #                                     max_value=self.acceleration,invert_direction_vectors_on_collision=False,delete_on_max_value=False)
         #     pynaccle.inactive_pool['DamageNumber'].remove(dmgnum)
         #     pynaccle.active_pool.append(dmgnum)
 
@@ -1581,48 +1096,20 @@ class Moveable_Object(AnimatedSprite):
 # movement vector class
 class Movement_Vector():
         
-    def __init__(self,name:str='movement',direction_vectorX:float=0,direction_vectorY:float=0,acceleration:float=1,Xcceleration_rate:float=delta,
-                    Xcceleration_rate_change:str='positive',reduce_on_wall_collision:bool=False,max_value:float=0,reset_on_max_value:bool='False',
-                    target_point:tuple=None):
+    def __init__(self,name:str='movement',direction_vectorX:float=0,direction_vectorY:float=0,acceleration:float=1,acceleration_rate:float=1,
+                    acceleration_rate_change:str='positive',invert_direction_vectors_on_collision:bool=False,max_value:float=0,delete_on_max_value:bool='False',
+                    target_point_to_stop_at:tuple=None):
         
         self.name = name
         self.direction_vectorX = direction_vectorX
         self.direction_vectorY = direction_vectorY
         self.acceleration = acceleration
-        self.Xcceleration_rate = Xcceleration_rate
-        self.Xcceleration_rate_change = Xcceleration_rate_change
-        self.reduce_on_wall_collision = reduce_on_wall_collision
+        self.acceleration_rate = acceleration_rate
+        self.acceleration_rate_change = acceleration_rate_change
+        self.invert_direction_vectors_on_collision = invert_direction_vectors_on_collision
         self.max_value = max_value
-        self.reset_on_max_value = reset_on_max_value
-        self.target_point = target_point
-
-
-   # loop through dictionary of vectors
-        for unique_id,movement_info in self.movement_vectors.items():
-
-            # print(unique_id)
-
-            # extract unqiue id and movement info
-            # unique_id,movement_info = list(vectors.items())[0]
-
-            # # get index
-            # index = self.movement_vectors.index(movement_info)
-
-            # set movement vars
-            movementx = Vector2(0,0)
-            movementy = Vector2(0,0)
-
-            # unpack all variables
-            direction_vectorX = movement_info["direction_vectorX"]
-            direction_vectorY = movement_info["direction_vectorY"]
-            acceleration = movement_info["acceleration"]
-            Xcceleration_rate = movement_info["Xcceleration_rate"]
-            Xcceleration_rate_change = movement_info["Xcceleration_rate_change"]
-            max_value = movement_info["max_value"]
-            reduce_on_wall_collision = movement_info["reduce_on_wall_collision"]
-            reset_on_max_value = movement_info["reset_on_max_value"]
-            target_point = movement_info["target_point"]
-
+        self.delete_on_max_value = delete_on_max_value
+        self.target_point_to_stop_at = target_point_to_stop_at
 
 # create damage number
 class DamageNumber(Moveable_Object):
@@ -1656,7 +1143,7 @@ class DamageNumber(Moveable_Object):
         
 
 # add the card inactive pool to the object that stores all the pools for different projectiles/on shot effects
-objectManager.inactive_pool["DamageNumber"] = [DamageNumber() for _ in range(300)]
+# objectManager.inactive_pool["DamageNumber"] = [DamageNumber() for _ in range(300)]
 
 
 # code to show damage numbers

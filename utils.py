@@ -301,7 +301,7 @@ def find_sine_value(t:float=0,amplitude:float=1):
     return math.sin(t) * amplitude
 
 # helps determine where bullets are shot
-def find_raycast(number_of_casted_rays:int=1,raycast_depth:int=1,raycast_width:int=10,starting_point:tuple=(0,0),target_point:tuple=(0,0),raycast_angle_offset:float=0):
+def find_raycast(number_of_casted_rays:int=1,raycast_depth:int=1,raycast_width:int=10,starting_point:tuple=(0,0),target_point_to_stop_at:tuple=(0,0),raycast_angle_offset:float=0):
 
     # get vector from player to gun
     # new_pos = target_pos - (Vector2(starting_pos)-Vector2(self.start_point))
@@ -316,14 +316,14 @@ def find_raycast(number_of_casted_rays:int=1,raycast_depth:int=1,raycast_width:i
     DEPTH = raycast_depth
 
     # calculate distance from mouse to player center, on the left is where the rays are pointing to, on the right is where the rays orgininate from
-    direction_vectorX,direction_vectorY = Vector2(target_point) - Vector2(starting_point)
+    direction_vectorX,direction_vectorY = Vector2(target_point_to_stop_at) - Vector2(starting_point)
     controlled_depth_endpoint = (0,0)
 
     # get the angle of the line going from the player center to the mouse
     player_angle = math.atan2(direction_vectorY,direction_vectorX) + raycast_angle_offset # this can be offset
 
     # given the mouse as the end point, calculate what the max depth is, just use the x pos to find the depth
-    max_depth = (target_point[0] - starting_point[0])/math.sin(player_angle)
+    max_depth = (target_point_to_stop_at[0] - starting_point[0])/math.sin(player_angle)
 
 
     # middle line, the fov width is then added and subtracted to this to get the full line of sight area
@@ -357,7 +357,7 @@ def find_raycast(number_of_casted_rays:int=1,raycast_depth:int=1,raycast_width:i
     # elif max_depth < DEPTH:
 
     #     # set end poitn using the mouse pos depth
-    #     controlled_depth_endpoint = target_point
+    #     controlled_depth_endpoint = target_point_to_stop_at
     #     DEPTH = max_depth
 
 
@@ -709,3 +709,8 @@ def find_point_on_circle_radius(radius:float,circle_center:tuple):
 
     # return point on circle at that angle
     return (circle_center[0] + (radius * math.cos(math.radians(random_angle))),circle_center[1] + (radius * math.sin(math.radians(random_angle))))
+
+
+# directly set a value for direction vector
+def find_direction_vector(start_position:float,end_position:float) -> tuple:        
+    return Vector2(end_position) - Vector2(start_position)

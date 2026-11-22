@@ -170,7 +170,7 @@ class Weapon():
 
                 # variable which gives possible end points for bullets and the ray number it is on as well 
                 raynumber_endpoint = find_raycast(number_of_casted_rays=self.casted_rays, raycast_depth=self.raycast_depth,
-                                                        raycast_width=self.raycast_width,starting_point=self.wielded_by.hurtbox.center,target_point=self.wielded_by.shooting_target_position,
+                                                        raycast_width=self.raycast_width,starting_point=self.wielded_by.hurtbox.center,target_point_to_stop_at=self.wielded_by.shooting_target_position,
                                                         raycast_angle_offset=self.raycast_angle_offset)
 
                 # this stores the middle line/end point
@@ -268,7 +268,7 @@ class Weapon():
 
                     # update movement vector
                     bullet.update_movement_vectors(unique_id='movement',direction_vectorX=direction_vectorX,direction_vectorY=direction_vectorY,
-                                                                acceleration=bullet.acceleration,Xcceleration_rate=0,max_value=bullet.acceleration)
+                                                                acceleration=bullet.acceleration,acceleration_rate=0,max_value=bullet.acceleration)
                     
                     # find current angle
                     current_angle = math.atan2(direction_vectorY,direction_vectorX) # add offset of 45 degrees
@@ -448,7 +448,7 @@ class Bullet(Moveable_Object):
 
                 # # bullet will stop at the target point
                 # if self.stop_at_target_position:
-                #     self.movement_vectors['movement']['target_point'] = self.target_position
+                #     self.movement_vectors['movement']['target_point_to_stop_at'] = self.target_position
 
                 return True
 
@@ -554,9 +554,9 @@ class Bullet(Moveable_Object):
         #     dmgnum.init(f"{damage}")
         #     dmgnum.spawn(gameobj.hurtbox.center)
         #     dmgnum.update_movement_vectors(unique_id='movement',direction_vectorX=0,
-        #                                     direction_vectorY=-1,acceleration=self.acceleration,Xcceleration_rate=0,
-        #                                     Xcceleration_rate_change='negative',
-        #                                     max_value=self.acceleration,reduce_on_wall_collision=False,reset_on_max_value=False)
+        #                                     direction_vectorY=-1,acceleration=self.acceleration,acceleration_rate=0,
+        #                                     acceleration_rate_change='negative',
+        #                                     max_value=self.acceleration,invert_direction_vectors_on_collision=False,delete_on_max_value=False)
         #     pynaccle.inactive_pool['DamageNumber'].remove(dmgnum)
         #     pynaccle.active_pool.append(dmgnum)
 
@@ -580,7 +580,7 @@ class Bullet(Moveable_Object):
             # self.draw_hitbox()
 
             # update movement vars
-            self.update_movement()
+            # self.update_movement()
 
             # movement
             self.move_and_collide()
