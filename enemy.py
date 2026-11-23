@@ -103,7 +103,7 @@ class Enemy(Moveable_Object,Pathfinding,StateMachine):
                 # collision_vectorX,collision_vectorY = (collision_vector/self.collision_vector_reduction)
 
                 # apply a knockback
-                self.update_movement_vectors(unique_id='overlapping_spread_knockback',direction_vectorX=collision_vectorX,direction_vectorY=collision_vectorY,
+                self.add_movement_vector(unique_id='overlapping_spread_knockback',direction_vectorX=collision_vectorX,direction_vectorY=collision_vectorY,
                                     acceleration=((game_object.overlap_resolution_strength/self.overlap_resolution_resistance)),acceleration_rate=self.decceleration_rate,acceleration_rate_change='negative',max_value=0,
                                     invert_direction_vectors_on_collision=True,delete_on_max_value=True)
 

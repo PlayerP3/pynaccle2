@@ -267,7 +267,7 @@ class Weapon():
                     direction_vectorX, direction_vectorY = Vector2(bullet.target_position) - Vector2(bullet.start_position)
 
                     # update movement vector
-                    bullet.update_movement_vectors(unique_id='movement',direction_vectorX=direction_vectorX,direction_vectorY=direction_vectorY,
+                    bullet.add_movement_vector(unique_id='movement',direction_vectorX=direction_vectorX,direction_vectorY=direction_vectorY,
                                                                 acceleration=bullet.acceleration,acceleration_rate=0,max_value=bullet.acceleration)
                     
                     # find current angle
@@ -553,7 +553,7 @@ class Bullet(Moveable_Object):
         #     dmgnum = pynaccle.inactive_pool['DamageNumber'][0]
         #     dmgnum.init(f"{damage}")
         #     dmgnum.spawn(gameobj.hurtbox.center)
-        #     dmgnum.update_movement_vectors(unique_id='movement',direction_vectorX=0,
+        #     dmgnum.add_movement_vector(unique_id='movement',direction_vectorX=0,
         #                                     direction_vectorY=-1,acceleration=self.acceleration,acceleration_rate=0,
         #                                     acceleration_rate_change='negative',
         #                                     max_value=self.acceleration,invert_direction_vectors_on_collision=False,delete_on_max_value=False)

@@ -56,7 +56,7 @@ class Wall(Moveable_Object):
     #     self.find_surrounding_game_objects()        
 
     #     # go through all possible game objects
-    #     for game_object in self.surrounding_game_objects:
+    #     for game_object in self.surroundingGameObjects:
 
     #         # rect collision check
     #         if self.hitbox.colliderect(game_object.hitbox):

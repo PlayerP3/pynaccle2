@@ -714,3 +714,34 @@ def find_point_on_circle_radius(radius:float,circle_center:tuple):
 # directly set a value for direction vector
 def find_direction_vector(start_position:float,end_position:float) -> tuple:        
     return Vector2(end_position) - Vector2(start_position)
+
+# find surrounding tiles
+def find_surrounding_tiles(pos:tuple,tile_width:int,tile_height:int) -> list:
+
+    # the current coordinate it is cycling through
+    i,j = pos
+    
+    # its neighbours in all cardinal directions
+    east_neighbour = (i+tile_width,j)
+    south_neighbour = (i,j+tile_height)
+    north_neighbour = (i,j-tile_height)
+    west_neighbour = (i-tile_width,j)
+
+    north_east_neighbour = (i+tile_width,j-tile_height)
+    north_west_neighbour = (i-tile_width,j-tile_height)
+    south_east_neighbour = (i+tile_width,j+tile_height)
+    south_west_neighbour = (i-tile_width,j+tile_height)
+
+    # data structure with what each of these positions are technically called
+    all_neighbours = [north_west_neighbour,
+                        north_east_neighbour,
+                        north_neighbour,
+                        west_neighbour,
+                        east_neighbour,
+                        pos,
+                        south_east_neighbour,
+                        south_west_neighbour,
+                        south_neighbour]
+
+    return all_neighbours
+

@@ -48,14 +48,11 @@ class Idle(State):
         # if we dont have an interacting object
         if not self.parent_node.interactingObj:
 
-            # find surrounding objects
-            self.parent_node.find_surrounding_game_objects()
-
             # filter surrounding objects
-            self.parent_node.filter_surrounding_game_objects(['Player'])
+            filteredGameObjects = self.parent_node.get_filtered_surrounding_objects(['Player'])
 
             # go through all possible game objects
-            for game_object in self.parent_node.surrounding_game_objects: 
+            for game_object in filteredGameObjects: 
 
                 # check for self collision with object
                 collision,hitbox = self.parent_node.hitbox_collision(game_object=game_object)

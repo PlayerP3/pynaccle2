@@ -31,7 +31,7 @@ class Interacting(State):
 
 
         # check if player is in colliding objects
-        # if pynaccle.player in self.parent_node.surrounding_game_objects:
+        # if pynaccle.player in self.parent_node.surroundingGameObjects:
         #     pass
             # display message
             # self.parent_node.display_message.draw_surface(position=(self.parent_node.hurtbox.topright[0]+3,self.parent_node.hurtbox.topright[1]-3))

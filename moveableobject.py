@@ -33,7 +33,7 @@ class Moveable_Object(AnimatedSprite):
 
                  general_explosion_immunity:bool=None,self_explosion_immunity:bool=None,collision_type='rect',canRicochetOffWalls:bool=False,
 
-                 x_metres_before_collision_detection:float=530,x_metres_before_homing_detection:float=1,
+                 x_metres_before_collision_detection:float=530,x_metres_before_homing_detection:float=1,collisionDetectionDistance:float=100,
 
                  is_immune_to:list=[],status_effect_immunity_tracker:dict={},can_gain_natural_immunity:bool=False,on_collision_effects:dict={},
 
@@ -164,6 +164,7 @@ class Moveable_Object(AnimatedSprite):
         self.can_collide = can_collide
         self.collision_type = collision_type
         self.inaccessible = inaccessible
+        self.collisionDetectionDistance = collisionDetectionDistance
 
         # interactions
         # is interacting
@@ -199,7 +200,9 @@ class Moveable_Object(AnimatedSprite):
         # collision variables
         self.game_objects_collided_with = {}
         self.is_target_for_homing = is_target_for_homing
-        self.surrounding_game_objects  = []
+        self.surroundingGameObjects  = []
+        self._surroundingTiles = []
+        self._surroundingGameObjects = []
 
 
         # effect variables
@@ -247,10 +250,10 @@ class Moveable_Object(AnimatedSprite):
 
         collision_vector = Vector2(0,0)
 
-        # print(f'My id is {id(self)}\nAll collisions:\n{self.surrounding_game_objects}\nDone')
+        # print(f'My id is {id(self)}\nAll collisions:\n{self.surroundingGameObjects}\nDone')
 
-        if self.surrounding_game_objects:
-            for gObj in self.surrounding_game_objects:
+        if self.surroundingGameObjects:
+            for gObj in self.surroundingGameObjects:
                 if self.hurtbox.colliderect(gObj.hurtbox):
                     collision_vector = Vector2(self.hurtbox.center) - Vector2(gObj.hurtbox.center)
 
@@ -428,84 +431,65 @@ class Moveable_Object(AnimatedSprite):
         self.is_active = True
         
         self.move_to(pos=pos,vertice=vertice)
+        
+    # get surrouinding tiles
+    @property
+    def surroundingTiles(self):
+        # self._surroundingTiles = find_surrounding_tiles(pos=self.current_tile_position,tile_width=configData.loadedConfigs['params']['tileSize'],tile_height=configData.loadedConfigs['params']['tileSize'])
+        
+        # check if tile coors are within collision detection distance of obj
+        tiles = []
+        
+        for coors in objectManager.object_positions:
+        
+            if find_dist_between_points(self.hurtbox.center,coors) <= self.collisionDetectionDistance:
+                tiles.append(coors)
+        
+        self._surroundingTiles = tiles
+        
+        return self._surroundingTiles
     
-    # find surrounding tiles
-    def find_surrounding_tiles(self,pos:tuple,tile_width:int=32,tile_height:int=32) -> list:
-
-        # the current coordinate it is cycling through
-        i,j = pos
-
-        # its neighbours in all cardinal directions
-        east_neighbour = (i+tile_width,j)
-        south_neighbour = (i,j+tile_height)
-        north_neighbour = (i,j-tile_height)
-        west_neighbour = (i-tile_width,j)
-
-        north_east_neighbour = (i+tile_width,j-tile_height)
-        north_west_neighbour = (i-tile_width,j-tile_height)
-        south_east_neighbour = (i+tile_width,j+tile_height)
-        south_west_neighbour = (i-tile_width,j+tile_height)
-
-        # data structure with what each of these positions are technically called
-        all_neighbours = [north_west_neighbour,
-                            north_east_neighbour,
-                            north_neighbour,
-                            west_neighbour,
-                            east_neighbour,
-                            pos,
-                            south_east_neighbour,
-                            south_west_neighbour,
-                            south_neighbour]
-
-        return all_neighbours
+    @surroundingTiles.setter
+    def surroundingTiles(self,v):
+        self._surroundingTiles = v
+        
+    # get surrounding game objects, i.e all the game objects on the surrounding tiles, so now we dont need to loop through a lot of stuff to find surrounding gameobjs
+    @property
+    def surroundingGameObjects(self):
     
+        # reset surrounding objects
+        gameObjs= []
 
+        for coors in self.surroundingTiles:
+
+            # possible entities that can collide with the bullet
+            gameObjs.extend(objectManager.object_positions[coors])
+
+        # filter out game objects based on if they are a target for the projectile, add if class name not wall
+        self._surroundingGameObjects = list(set([x for x in gameObjs if x.is_active and id(x) != id(self) ]))
+        
+        return self._surroundingGameObjects
+    
+    @surroundingGameObjects.setter
+    def surroundingGameObjects(self,v):
+        self._surroundingGameObjects = v
+        
+    def get_filtered_surrounding_objects(self,classes:list,deep:bool=False):
+     
+        return [x for x in self.surroundingGameObjects if x.__class__.__name__ in classes]
+    
     # find closest interactable to the moveable object
     def find_closest_interactable(self):
-
-        if self.__class__.__name__ != 'Enemy':
-        
-            # get all nearby interavtables
-            interactables = [x for x in self.surrounding_game_objects if array_is_in_array(get_mro(gameObject=x),['Interactable'])]
-
-            # if interactables find the closest one
-            if interactables:
-                closestInteractable = min(interactables,key=lambda x:find_dist_between_points(x.hurtbox.center,self.hurtbox.center))
-                closestInteractable.interactingObj = self
-                
-        else:
-            interactables = []
+        pass
             
-        # get all nearby interavtables
-        # interactables = [x for x in self.surrounding_game_objects if array_is_in_array(get_mro(gameObject=x),['Interactable'])]
-
-        # # if interactables find the closest one
-        # if interactables:
-            
-        #     closestInteractable = min(interactables,key=lambda x:find_dist_between_points(x.hurtbox.center,self.hurtbox.center))
-            
-        #     if self.is_interacting and not closestInteractable.interactingObj:
-        #         closestInteractable.interactingObj = self
-
-
     # wall collision check
     def collision_check(self,axis:str='y'):
 
         if self.__class__.__name__ == "Wall":
             return
-
-        # find surrounding objects
-        self.find_surrounding_game_objects()  
-
-        # separate self objects from different objects
-        # self_origin_surrounding_objects  = [x for x in self.surrounding_game_objects if x.object_of_origin == self.object_of_origin]  
-        # different_origin_surrounding_objets = [x for x in self.surrounding_game_objects if x.object_of_origin != self.object_of_origin]  
-
-        # identify closest interactable to object
-        self.find_closest_interactable()
-           
+   
         # go through all possible game objects
-        for game_object in self.surrounding_game_objects:
+        for game_object in self.surroundingGameObjects:
 
             if not game_object.can_collide:
                 continue
@@ -533,6 +517,9 @@ class Moveable_Object(AnimatedSprite):
                 if collision:
 
                     self.handle_collision(game_object=game_object,axis=axis)
+                    
+        # identify closest interactable to object
+        self.find_closest_interactable()
 
                     
 
@@ -569,7 +556,7 @@ class Moveable_Object(AnimatedSprite):
         
     # update movement vectors array, use whenever setting both the direction vectors and acceleration
     # concept of unique id is that a single object can only apply a single vector to the moveable object
-    def update_movement_vectors(self,unique_id:int,direction_vectorX:float,direction_vectorY:float,acceleration:float=1,
+    def add_movement_vector(self,unique_id:int,direction_vectorX:float,direction_vectorY:float,acceleration:float=1,
                                 acceleration_rate:float=1,acceleration_rate_change:str='positive',max_value:float=1,invert_direction_vectors_on_collision:bool=False,
                                 inversion_collisionX:bool=False,inversion_collisionY:bool=False,delete_on_max_value:bool=False,target_point_to_stop_at:tuple = None) -> None:
 
@@ -593,9 +580,6 @@ class Moveable_Object(AnimatedSprite):
 
         # set final movement var
         self.movement = Vector2(0,0)
-
-        # get surrounding rects
-        self.surrounding_rects = self.find_surrounding_tiles(pos=self.current_tile_position)
 
         # collision with objects
         # self.spread_overlapping_game_objects()
@@ -838,7 +822,7 @@ class Moveable_Object(AnimatedSprite):
             random_point = self.find_point_on_circle_radius(radius=100,circle_center=self.hurtbox.center)
             direction_vectorX,direction_vectorY = Vector2(random_point) - Vector2(self.hurtbox.center)
 
-            self.update_movement_vectors(unique_id='movement',direction_vectorX=direction_vectorX,
+            self.add_movement_vector(unique_id='movement',direction_vectorX=direction_vectorX,
                                             direction_vectorY=direction_vectorY,acceleration=self.acceleration,acceleration_rate=0,
                                             acceleration_rate_change='negative',
                                             max_value=self.acceleration,invert_direction_vectors_on_collision=False,delete_on_max_value=False,
@@ -855,7 +839,7 @@ class Moveable_Object(AnimatedSprite):
                 random_point = self.find_point_on_circle_radius(radius=100,circle_center=self.hurtbox.center)
                 direction_vectorX,direction_vectorY = Vector2(random_point) - Vector2(self.hurtbox.center)
 
-                self.update_movement_vectors(unique_id='movement',direction_vectorX=direction_vectorX,
+                self.add_movement_vector(unique_id='movement',direction_vectorX=direction_vectorX,
                                             direction_vectorY=direction_vectorY,acceleration=self.acceleration,acceleration_rate=0,
                                             acceleration_rate_change='negative',
                                             max_value=self.acceleration,invert_direction_vectors_on_collision=False,delete_on_max_value=False,
@@ -869,7 +853,7 @@ class Moveable_Object(AnimatedSprite):
                     random_point = self.find_point_on_circle_radius(radius=100,circle_center=self.hurtbox.center)
                     direction_vectorX,direction_vectorY = Vector2(random_point) - Vector2(self.hurtbox.center)
 
-                    self.update_movement_vectors(unique_id='movement',direction_vectorX=direction_vectorX,
+                    self.add_movement_vector(unique_id='movement',direction_vectorX=direction_vectorX,
                                                 direction_vectorY=direction_vectorY,acceleration=self.acceleration,acceleration_rate=0,
                                                 acceleration_rate_change='negative',
                                                 max_value=self.acceleration,invert_direction_vectors_on_collision=False,delete_on_max_value=False,
@@ -878,42 +862,8 @@ class Moveable_Object(AnimatedSprite):
 
         self.move2()
 
-    # find surrounding game objectts
-    def find_surrounding_game_objects(self):
 
-        # reset surrounding objects
-        self.surrounding_game_objects = []
-
-        for coors in objectManager.object_positions:
-
-            # add game object if it is within the boundaries
-            if (Vector2(self.hurtbox.center) - Vector2(coors)).length() <= self.x_metres_before_collision_detection:
-
-                # possible entities that can collide with the bullet
-                self.surrounding_game_objects.extend(objectManager.object_positions[coors])
-
-        # filter out game objects based on if they are a target for the projectile
-        self.surrounding_game_objects = [x for x in self.surrounding_game_objects if x.is_active and id(x) != id(self)]
-
-        # remove duplicates
-        self.surrounding_game_objects = list(set(self.surrounding_game_objects))
-
-        # reorder so walls are at the end
-        walls = [x for x in self.surrounding_game_objects if x.__class__.__name__ == 'Wall']
-        nowalls = [x for x in self.surrounding_game_objects if x.__class__.__name__ != 'Wall']
-
-        nowalls.extend(walls)
-        self.surrounding_game_objects = nowalls
-
-    def filter_surrounding_game_objects(self,classes:list,deep:bool=False):
-
-        # we look at mro 
-        if deep:
-            pass
-
-        elif not deep:
-
-            self.surrounding_game_objects = [x for x in self.surrounding_game_objects if x.__class__.__name__ in classes]
+    
 
     
 
@@ -928,35 +878,13 @@ class Moveable_Object(AnimatedSprite):
         #     dmgnum = pynaccle.inactive_pool['DamageNumber'][0]
         #     dmgnum.init(f"{damage}")
         #     dmgnum.spawn(gameobj.hurtbox.center)
-        #     dmgnum.update_movement_vectors(unique_id='movement',direction_vectorX=0,
+        #     dmgnum.add_movement_vector(unique_id='movement',direction_vectorX=0,
         #                                     direction_vectorY=-1,acceleration=self.acceleration,acceleration_rate=0,
         #                                     acceleration_rate_change='negative',
         #                                     max_value=self.acceleration,invert_direction_vectors_on_collision=False,delete_on_max_value=False)
         #     pynaccle.inactive_pool['DamageNumber'].remove(dmgnum)
         #     pynaccle.active_pool.append(dmgnum)
 
-
-
-
-
-
-    
-    # behaviour function
-    def run_behaviour(self):
-
-        if self.is_active:
-
-            self.update_position()
-
-            # self.find_surrounding_game_objects()
-
-            self.move2()
-            
-            # draw surface
-            self.draw_surface(position=self.hurtbox.center)
-
-            # draw rect for debugging 
-            self.draw_rect(position=self.hurtbox.center)
 
     # functions that can be for calculations etc
     # enter radius, and circle center, get a point on the circles outer radius
@@ -1031,7 +959,7 @@ class Moveable_Object(AnimatedSprite):
     def explode(self,radius:float):
 
         # look through surrounding objects
-        for gobj in self.surrounding_game_objects:
+        for gobj in self.surroundingGameObjects:
 
             if (Vector2(self.hurtbox.center) - Vector2(gobj.hurtbox.center)).length() < radius:
 

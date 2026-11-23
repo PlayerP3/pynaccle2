@@ -417,7 +417,7 @@ class Pathfinding():
             direction_vectorX, direction_vectorY = Vector2(target_position) - Vector2(start_position)
 
             # update movement vector
-            self.update_movement_vectors(unique_id='pathing',direction_vectorX=direction_vectorX,direction_vectorY=direction_vectorY,
+            self.add_movement_vector(unique_id='pathing',direction_vectorX=direction_vectorX,direction_vectorY=direction_vectorY,
                                                         acceleration=self.acceleration,acceleration_rate=0,max_value=self.acceleration,target_point_to_stop_at=target_point_to_stop_at)
             
             
